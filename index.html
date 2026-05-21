@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-<title>Mi Petición v13 — Modo claro/oscuro</title>
+<title>Mi Petición v14 — Logout accesible</title>
 <meta name="color-scheme" content="light dark">
 
 <!-- ════════════════════════════════════════════════════════════════
@@ -1799,10 +1799,12 @@ body {
 .case-escalate-actions .btn-tutela:hover { background: var(--errd); }
 
 /* ── V8: FAB "Pedir ayuda" persistente en wizard y casos ── */
+/* V13-fix: ubicado del lado DERECHO (zona del pulgar para diestros). */
 .help-fab {
   position: fixed;
   bottom: calc(76px + env(safe-area-inset-bottom, 0px));
-  left: calc(50% - 215px + 16px);
+  right: calc(50% - 215px + 16px);
+  left: auto;
   width: 52px; height: 52px;
   border-radius: 50%;
   background: var(--sur);
@@ -1819,7 +1821,7 @@ body {
 }
 .help-fab:hover { background: var(--pl); transform: translateY(-2px); }
 .help-fab:focus-visible { outline: 3px solid var(--p); outline-offset: 3px; }
-@media (max-width: 430px) { .help-fab { left: 16px; } }
+@media (max-width: 430px) { .help-fab { right: 16px; left: auto; } }
 
 /* En s-form, mover el botón de ayuda arriba del action sticky (que ocupa bottom) */
 .help-fab.in-form { bottom: calc(140px + env(safe-area-inset-bottom, 0px)); }
@@ -2339,17 +2341,25 @@ body {
 .fab::before,
 .fab::after { content: none; }
 
-/* Help-fab: ajustar posición porque el nav ahora flota más arriba */
+/* V14: Help-fab posicionado claramente a la derecha.
+   - Aparece solo en s-form (con clase .in-form) y s-case (con clase .in-case).
+   - No coexiste con el FAB+, así que ocupa el espacio principal del lado derecho. */
 .help-fab {
-  bottom: calc(96px + env(safe-area-inset-bottom, 0px));
-  left: calc(50% - 215px + 20px);
+  left: auto !important;
+  right: calc(50% - 215px + 20px);
   box-shadow:
     0 8px 24px rgba(9, 73, 129, 0.18),
     0 2px 6px rgba(9, 73, 129, 0.08);
 }
-.help-fab.in-form { bottom: calc(160px + env(safe-area-inset-bottom, 0px)); }
-.help-fab.in-case { bottom: calc(30px + env(safe-area-inset-bottom, 0px)); }
-@media (max-width: 430px) { .help-fab { left: 20px; } }
+.help-fab.in-form {
+  bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+}
+.help-fab.in-case {
+  bottom: calc(30px + env(safe-area-inset-bottom, 0px));
+}
+@media (max-width: 430px) {
+  .help-fab { left: auto !important; right: 20px; }
+}
 
 /* ── Avatar header v12: minimalista (sin silueta), notificación visible ── */
 .dt-avatar {
@@ -2694,6 +2704,218 @@ body {
 }
 .theme-toggle-btn > svg { flex-shrink: 0; }
 
+/* ════════════════════════════════════════════════════════════════
+   V13 — ACCOUNT MENU (sheet desplegable desde el icono superior derecho)
+   Reduce el costo de acceso a "Cerrar sesión" de 3 clicks + scroll a 2 clicks.
+   ════════════════════════════════════════════════════════════════ */
+.account-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.account-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 14px;
+  background: var(--bg-surface);
+  border: 1px solid var(--bdr);
+  border-radius: 14px;
+  cursor: pointer;
+  font-family: var(--f);
+  text-align: left;
+  width: 100%;
+  transition: background .15s, border-color .15s, transform .12s;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 64px;
+}
+.account-menu-item:hover {
+  background: var(--n);
+  border-color: var(--p);
+}
+.account-menu-item:active { transform: scale(0.99); }
+.account-menu-item:focus-visible {
+  outline: 2px solid var(--p);
+  outline-offset: 2px;
+}
+.account-menu-ico {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--pl);
+  color: var(--p);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.account-menu-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.account-menu-ttl {
+  font-size: var(--t-base);
+  font-weight: 800;
+  color: var(--d);
+  line-height: 1.3;
+}
+.account-menu-sub {
+  font-size: var(--t-xs);
+  color: var(--dh);
+  line-height: 1.4;
+}
+.account-menu-arr {
+  color: var(--dh);
+  font-size: 20px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.account-menu-item--danger:hover {
+  background: var(--errl);
+  border-color: var(--err);
+}
+
+/* Override dark del account menu */
+[data-theme="dark"] .account-menu-item {
+  background: var(--bg-surface);
+  border-color: var(--bdr);
+}
+[data-theme="dark"] .account-menu-item:hover {
+  background: var(--bg-elevated);
+}
+[data-theme="dark"] .account-menu-item--danger:hover {
+  background: rgba(255, 107, 107, 0.10);
+}
+
+/* V14: Logout en header de s-help (acceso rápido)
+   Botón posicionado a la derecha de la barra, con icono claro
+   y área de toque generosa. Se ve igual en claro/oscuro. */
+.bar-logout-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background .15s, transform .12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.bar-logout-btn:hover {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+.bar-logout-btn:active { transform: translateY(-50%) scale(0.94); }
+.bar-logout-btn:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+/* La barra (.bar) ya es position:relative en el código base. Confirmo aquí: */
+.bar { position: relative; }
+
+/* V14: Header de vista simple — notificaciones y logout discretos
+   pero accesibles, sin romper la simplicidad de las 2 acciones principales. */
+.simple-header {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 20px 0;
+}
+.simple-header-btn {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  border: 1px solid var(--bdr);
+  background: var(--bg-surface);
+  color: var(--dm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background .15s, color .15s, transform .12s, border-color .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.simple-header-btn:hover {
+  background: var(--pl);
+  color: var(--p);
+  border-color: var(--p);
+}
+.simple-header-btn:active { transform: scale(0.94); }
+.simple-header-btn:focus-visible {
+  outline: 2px solid var(--p);
+  outline-offset: 2px;
+}
+.simple-header-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: var(--err);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--bg-surface);
+  line-height: 1;
+}
+
+/* En modo oscuro, las superficies del header simple */
+[data-theme="dark"] .simple-header-btn {
+  background: var(--bg-surface);
+  border-color: var(--bdr);
+}
+[data-theme="dark"] .simple-header-btn:hover {
+  background: var(--plm);
+}
+
+/* V14: Variante on-dark — mismo botón sobre fondos oscuros (hero azul de vista detallada).
+   Mantiene exactamente la misma forma, dimensiones y comportamiento; solo invierte
+   los colores para conservar contraste. */
+.simple-header-btn.on-dark {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.92);
+}
+.simple-header-btn.on-dark:hover {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.32);
+  color: #fff;
+}
+.simple-header-btn.on-dark:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+/* Si el botón ya tiene un transform inline (ej: vertical-center en .bar),
+   el :active debe componer ambas transformaciones */
+.simple-header-btn.on-dark[style*="translateY"]:active {
+  transform: translateY(-50%) scale(0.94) !important;
+}
+/* El badge sobre el botón on-dark necesita borde acorde al fondo del botón */
+.simple-header-btn.on-dark .simple-header-badge {
+  border-color: #0F1F33;  /* mismo color que el hero detallado */
+}
+[data-theme="dark"] .simple-header-btn.on-dark .simple-header-badge {
+  border-color: #0A1828;
+}
+
 </style>
 </head>
 <body>
@@ -2762,6 +2984,19 @@ body {
   </div>
 </div>
 
+<!-- V14: Sheet de confirmación de cierre de sesión -->
+<div class="scrim" id="sc-logout" role="dialog" aria-modal="true" aria-labelledby="sc-logout-ttl" onclick="if(event.target.classList.contains('scrim'))csc('sc-logout')">
+  <div class="sheet">
+    <div class="sh-handle" aria-hidden="true"></div>
+    <h2 class="sh-title" id="sc-logout-ttl">¿Cerrar sesión?</h2>
+    <p class="sh-body">Tendrá que volver a ingresar sus datos la próxima vez. Sus peticiones quedan guardadas.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button class="btn btn-danger" onclick="csc('sc-logout');doLogout()">Sí, cerrar sesión</button>
+      <button class="btn btn-fill" onclick="csc('sc-logout')">Mejor no</button>
+    </div>
+  </div>
+</div>
+
 <!-- V8 — Sheet de ayuda contextual (FAB Pedir ayuda) -->
 <div class="scrim" id="sc-help-human" role="dialog" aria-modal="true" aria-labelledby="sc-help-human-ttl" onclick="if(event.target.classList.contains('scrim'))csc('sc-help-human')">
   <div class="sheet">
@@ -2782,6 +3017,67 @@ body {
     <p style="font-size:var(--t-xs);color:var(--dh);text-align:center;line-height:1.5;">
       Lun a Vie · 8am – 5pm · Es gratis
     </p>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     V13 — Sheet de cuenta (acceso rápido a ajustes, apariencia, cerrar sesión)
+     Abierto desde el icono superior derecho del dashboard.
+     ════════════════════════════════════════════════════════════════ -->
+<div class="scrim" id="sc-account" role="dialog" aria-modal="true" aria-labelledby="sc-account-ttl" onclick="if(event.target.classList.contains('scrim'))csc('sc-account')">
+  <div class="sheet">
+    <div class="sh-handle" aria-hidden="true"></div>
+    <h2 class="sh-title" id="sc-account-ttl">Mi cuenta</h2>
+    <p class="sh-body">Ajustes rápidos y opciones de su sesión.</p>
+
+    <div class="account-menu" role="menu">
+      <button class="account-menu-item" role="menuitem" onclick="csc('sc-account'); go('s-help')">
+        <span class="account-menu-ico">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </span>
+        <span class="account-menu-body">
+          <span class="account-menu-ttl">Ayuda y guía legal</span>
+          <span class="account-menu-sub">Cómo funciona el derecho de petición</span>
+        </span>
+        <span class="account-menu-arr" aria-hidden="true">›</span>
+      </button>
+
+      <button class="account-menu-item" role="menuitem" onclick="csc('sc-account'); go('s-help'); setTimeout(()=>{const el=document.querySelector('.theme-toggle'); if(el)el.scrollIntoView({behavior:'smooth',block:'center'});},200)">
+        <span class="account-menu-ico">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        </span>
+        <span class="account-menu-body">
+          <span class="account-menu-ttl">Apariencia</span>
+          <span class="account-menu-sub">Tema claro, oscuro o del sistema</span>
+        </span>
+        <span class="account-menu-arr" aria-hidden="true">›</span>
+      </button>
+
+      <button class="account-menu-item account-menu-item--danger" role="menuitem" onclick="confirmLogout()">
+        <span class="account-menu-ico" style="color:var(--err); background:var(--errl);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </span>
+        <span class="account-menu-body">
+          <span class="account-menu-ttl" style="color:var(--err);">Cerrar sesión</span>
+          <span class="account-menu-sub">Salir de mi cuenta de forma segura</span>
+        </span>
+      </button>
+    </div>
+
+    <button class="btn btn-ghost" onclick="csc('sc-account')" style="margin-top:6px;">Cancelar</button>
+  </div>
+</div>
+
+<!-- V13 — Sheet de confirmación de cerrar sesión -->
+<div class="scrim" id="sc-logout-confirm" role="dialog" aria-modal="true" aria-labelledby="sc-logout-ttl" onclick="if(event.target.classList.contains('scrim'))csc('sc-logout-confirm')">
+  <div class="sheet">
+    <div class="sh-handle" aria-hidden="true"></div>
+    <h2 class="sh-title" id="sc-logout-ttl">¿Cerrar su sesión?</h2>
+    <p class="sh-body">Tendrá que ingresar de nuevo con su documento y contraseña. Sus peticiones quedan guardadas.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button class="btn btn-danger" onclick="doLogout()">Sí, cerrar sesión</button>
+      <button class="btn btn-fill" onclick="csc('sc-logout-confirm')">Mejor sigo aquí</button>
+    </div>
   </div>
 </div>
 
@@ -3063,6 +3359,17 @@ body {
 
   <!-- ═══ V8 — MODO SIMPLE (Luis): 2 botones gigantes ═══ -->
   <div class="dash-simple" id="dash-simple">
+    <!-- V14: Header con notificaciones y logout -->
+    <div class="simple-header">
+      <button class="simple-header-btn" onclick="openNotifications()" aria-label="Notificaciones: tiene 1 plazo por vencer">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="simple-header-badge" aria-hidden="true">1</span>
+      </button>
+      <button class="simple-header-btn" onclick="confirmLogout()" aria-label="Cerrar sesión">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+
     <div class="simple-greeting">
       <div class="simple-greeting-hi">Hola,</div>
       <div class="simple-greeting-name" id="simple-greeting-name">Carlos Eduardo</div>
@@ -3105,14 +3412,14 @@ body {
             Vista detallada · cambiar
           </button>
         </div>
-        <div style="display:flex;align-items:center;gap:4px;">
-          <!-- V8: Campana con badge de plazos por vencer -->
-          <button class="bell-btn" onclick="openNotifications()" aria-label="Notificaciones: tiene 1 plazo por vencer">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <!-- V14: Botones unificados con la vista simple (notificaciones + logout) -->
+          <button class="simple-header-btn on-dark" onclick="openNotifications()" aria-label="Notificaciones: tiene 1 plazo por vencer">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-            <span class="bell-badge" aria-hidden="true">1</span>
+            <span class="simple-header-badge" aria-hidden="true">1</span>
           </button>
-          <button class="dt-avatar" onclick="go('s-help')" aria-label="Ajustes y mi perfil">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <button class="simple-header-btn on-dark" onclick="confirmLogout()" aria-label="Cerrar sesión">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
           </button>
         </div>
       </div>
@@ -4399,7 +4706,7 @@ body {
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
     </button>
     <span class="bar-title">Mi caso</span>
-    <button class="bell-btn" onclick="openNotifications()" aria-label="Notificaciones">
+    <button class="simple-header-btn on-dark" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);" onclick="openNotifications()" aria-label="Notificaciones">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
     </button>
   </div>
@@ -4549,6 +4856,10 @@ body {
   <div class="bar blue">
     <button class="bar-btn" onclick="go('s-dash')" style="color:#fff;" aria-label="Volver al inicio">‹</button>
     <span class="bar-title">Ayuda</span>
+    <!-- V14: Logout accesible desde el header -->
+    <button class="bar-logout-btn" onclick="confirmLogout()" aria-label="Cerrar sesión">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    </button>
   </div>
   <div class="scroll pb">
 
@@ -4687,16 +4998,16 @@ body {
         <span class="hlp-arr" aria-hidden="true">›</span>
       </div>
 
-      <div class="hlp-item" onclick="go('s-login')" tabindex="0" role="button"
+      <div class="hlp-item" onclick="osc('sc-logout-confirm')" tabindex="0" role="button"
         style="border-color:#FFCDD2;"
-        aria-label="Salir de mi cuenta"
-        onkeypress="if(event.key==='Enter')go('s-login')">
+        aria-label="Cerrar mi sesión"
+        onkeypress="if(event.key==='Enter')osc('sc-logout-confirm')">
         <div class="hlp-ico" style="background:var(--errl);" aria-hidden="true">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--err)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
         </div>
         <div class="hlp-txt">
-          <div class="hlp-ttl" style="color:var(--errd);">Salir de mi cuenta</div>
-          <div class="hlp-sub">Lo desconectamos de forma segura</div>
+          <div class="hlp-ttl" style="color:var(--errd);">Cerrar sesión</div>
+          <div class="hlp-sub">Sale de su cuenta de forma segura</div>
         </div>
         <span class="hlp-arr" aria-hidden="true">›</span>
       </div>
@@ -5303,6 +5614,21 @@ function detachSystemThemeListener() {
   _systemThemeListener = null;
 }
 
+/* V14: Logout con confirmación.
+   Acción destructiva accesible rápido pero protegida del tap accidental
+   con un sheet sc-logout. */
+function confirmLogout() {
+  osc('sc-logout');
+}
+
+function doLogout() {
+  // Limpieza mínima de estado en memoria (la persistencia real iría aquí)
+  D.wizardStarted = false;
+  D.step = 1;
+  go('s-login');
+  if (typeof snack === 'function') snack('Sesión cerrada', 'ok');
+}
+
 function applyDashMode() {
   const simple = document.getElementById('dash-simple');
   const advanced = document.getElementById('dash-advanced');
@@ -5324,6 +5650,27 @@ function toggleDashMode() {
   D.dashMode = (D.dashMode === 'simple') ? 'advanced' : 'simple';
   applyDashMode();
   snack(D.dashMode === 'simple' ? 'Vista simple activada' : 'Vista detallada activada', 'info');
+}
+
+/* ══════════════════════════════════════════════════════════════
+   V13 — CERRAR SESIÓN
+   Abre confirmación primero (acción destructiva) y luego ejecuta logout.
+   ══════════════════════════════════════════════════════════════ */
+function confirmLogout() {
+  csc('sc-account');
+  // Pequeño delay para que el sheet anterior se cierre antes de abrir el otro
+  setTimeout(() => osc('sc-logout-confirm'), 180);
+}
+
+function doLogout() {
+  csc('sc-logout-confirm');
+  // Resetear estado de sesión sensible (en producción: invalidar token, limpiar caché)
+  D.wizardStarted = false;
+  D.step = 1;
+  // Mantener userPetitions: si el usuario vuelve a entrar al mismo dispositivo es UX mejor
+  // (en producción real, esto se evalúa según el modelo de seguridad)
+  snack('Sesión cerrada. Vuelva cuando quiera.', 'ok', '👋');
+  setTimeout(() => go('s-login'), 350);
 }
 
 /* ══ V8 — Notificaciones (campana del header) ══ */
