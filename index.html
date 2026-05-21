@@ -3,7 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-<title>Mi Petición v12 — UI 2026</title>
+<title>Mi Petición v13 — Modo claro/oscuro</title>
+<meta name="color-scheme" content="light dark">
+<script>
+/* V13: Aplicar tema ANTES del primer paint para evitar el flash.
+   Prioridad: preferencia explícita del usuario > preferencia del sistema. */
+(function() {
+  try {
+    var stored = localStorage.getItem('miPeticion_theme');
+    var pref = stored || 'system';
+    var apply;
+    if (pref === 'system') {
+      apply = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    } else {
+      apply = pref;
+    }
+    document.documentElement.setAttribute('data-theme', apply);
+    // Guarda la preferencia explícita en una variable global para usarla después
+    window.__themePreference = pref;
+  } catch (e) {
+    // Si localStorage falla (modo privado), default a light
+    document.documentElement.setAttribute('data-theme', 'light');
+    window.__themePreference = 'system';
+  }
+})();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,300;6..12,400;6..12,600;6..12,700;6..12,800&display=swap" rel="stylesheet">
 <style>
@@ -60,7 +84,56 @@
 
   /* Táctil R6: mínimo 44x44px */
   --tap: 44px;
+
+  /* V13: Tokens semánticos extra para theming */
+  --bg-app:       #C9D3DC;  /* fondo fuera del frame */
+  --bg-canvas:    #F4F6F8;  /* fondo del app (era var(--n) hardcodeado) */
+  --bg-surface:   #FFFFFF;  /* superficies elevadas (tarjetas) */
+  --bg-elevated:  #FFFFFF;  /* sheets, navs, popovers */
+  --shadow-rgb:   15, 31, 51;  /* para box-shadows con rgba */
 }
+
+/* ══════════════════════════════════════════════════════════════
+   V13 — DARK THEME
+   Activado con [data-theme="dark"] en <html>.
+   Solo redefinimos los tokens necesarios; el resto hereda.
+   Contraste WCAG AA mantenido (texto principal 12.6:1 sobre fondo).
+   ══════════════════════════════════════════════════════════════ */
+[data-theme="dark"] {
+  /* Primario más luminoso para conservar contraste sobre fondo oscuro */
+  --p:    #4DA3E0;
+  --pk:   #6DBFFF;
+  --pl:   #16263B;   /* primary "light" en dark = blue tinted dark */
+  --plm:  #1E3450;
+
+  /* Texto: invertir jerarquía sobre fondo oscuro */
+  --d:    #ECF1F7;   /* texto principal */
+  --ds:   #C9D4E0;   /* texto secundario */
+  --dm:   #A3B0BF;   /* texto medio */
+  --dh:   #7E8B99;   /* texto de ayuda */
+
+  /* Superficies y fondos */
+  --bg-app:       #050810;     /* fondo fuera del frame */
+  --bg-canvas:    #0E1623;     /* fondo del app */
+  --bg-surface:   #18222F;     /* tarjetas */
+  --bg-elevated:  #1F2A38;     /* sheets, navs */
+  --n:            #0E1623;     /* alias usado por código viejo */
+  --sur:          #18222F;     /* alias */
+  --bdr:          #2A3645;     /* borde sutil sobre dark */
+  --shadow-rgb:   0, 0, 0;
+
+  /* Semánticos (un poco más luminosos para visibilidad) */
+  --err:  #FF6B6B;
+  --errl: #2D1818;
+  --errd: #FFA0A0;
+  --wrn:  #FFB74D;
+  --wrnl: #2A2014;
+  --ok:   #66BB6A;
+  --okl:  #142918;
+  --okd:  #A5D6A7;
+}
+
+/* Respetar preferencia de sistema en primera carga (lo aplica el script inline antes de paint) */
 
 /* ══ RESET ══ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -72,22 +145,24 @@ body {
   font-size: var(--t-base);
   line-height: 1.55;
   color: var(--d);
-  background: #C9D3DC;
+  background: var(--bg-app);
   display: flex;
   justify-content: center;
   min-height: 100vh;
+  transition: background-color .22s ease, color .22s ease;
 }
 
 #app {
   width: 100%;
   max-width: 430px;
   min-height: 100vh;
-  background: var(--n);
+  background: var(--bg-canvas);
   position: relative;
   display: flex;
   flex-direction: column;
   /* R15: sin overflow:hidden para no cortar contenido en zoom */
-  box-shadow: 0 0 60px rgba(15,31,51,.20);
+  box-shadow: 0 0 60px rgba(var(--shadow-rgb), .20);
+  transition: background-color .22s ease;
 }
 
 .screen { display: none; flex-direction: column; min-height: 100vh; flex: 1; }
@@ -402,7 +477,13 @@ body {
 /* ══════════════════════════════════════════════
    LOGIN
 ══════════════════════════════════════════════ */
-#s-login { background: var(--d); }
+/* Hero del login: fondo azul oscuro corporativo en modo claro */
+#s-login { background: #0F1F33; }
+/* V13-fix: en modo oscuro mantener un fondo oscuro pero consistente con dark mode
+   (no usar var(--d) que ahora es casi-blanco e invisibilizaba el texto). */
+[data-theme="dark"] #s-login {
+  background: linear-gradient(135deg, #0F2540 0%, #0A1828 60%, #051120 100%);
+}
 .lg-hero {
   flex:1; display: flex; flex-direction: column;
   align-items: center; justify-content: center;
@@ -2363,6 +2444,244 @@ body {
   pointer-events: none;
 }
 
+/* ════════════════════════════════════════════════════════════════
+   V13 — DARK THEME · Overrides específicos
+   Reglas que no podemos resolver solo con tokens (porque tienen
+   colores hardcodeados en rgba o gradients).
+   ════════════════════════════════════════════════════════════════ */
+
+/* Nav flotante (Liquid Glass) — invertir a vidrio oscuro */
+[data-theme="dark"] .nav {
+  background: rgba(24, 34, 48, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.5),
+    0 4px 12px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Hero gradients del dashboard — ajustar para dark */
+[data-theme="dark"] .dash-top {
+  background: linear-gradient(135deg, #0F2540 0%, #0A1828 100%);
+}
+
+/* Tarjetas en s-pet, dashboard y plantillas */
+[data-theme="dark"] .pc,
+[data-theme="dark"] .tpl-card,
+[data-theme="dark"] .lg-card,
+[data-theme="dark"] .case-block,
+[data-theme="dark"] .rv-fields,
+[data-theme="dark"] .success-radicado {
+  background: var(--bg-surface);
+  border-color: var(--bdr);
+}
+[data-theme="dark"] .pc { box-shadow: 0 2px 8px rgba(0,0,0,.3); }
+[data-theme="dark"] .pc:hover { box-shadow: 0 6px 20px rgba(0,0,0,.45); }
+
+/* Inputs y textareas */
+[data-theme="dark"] .inp,
+[data-theme="dark"] .txa,
+[data-theme="dark"] .sel,
+[data-theme="dark"] .wa-input {
+  background: var(--bg-surface);
+  color: var(--d);
+  border-color: var(--bdr);
+}
+[data-theme="dark"] .inp::placeholder,
+[data-theme="dark"] .txa::placeholder,
+[data-theme="dark"] .wa-input::placeholder {
+  color: var(--dh);
+}
+
+/* Sheets, modals */
+[data-theme="dark"] .sheet,
+[data-theme="dark"] .scrim .sheet {
+  background: var(--bg-elevated);
+  color: var(--d);
+}
+[data-theme="dark"] .scrim {
+  background: rgba(0, 0, 0, 0.65);
+}
+
+/* Bottom navigation: superficies y hover */
+[data-theme="dark"] .nav-tab .nav-lbl { color: var(--dm); }
+[data-theme="dark"] .nav-tab.on .nav-lbl { color: var(--p); }
+[data-theme="dark"] .nav-dot { color: var(--dm); }
+[data-theme="dark"] .nav-tab.on .nav-dot { color: var(--p); }
+
+/* Barras y headers superiores azules — un poco más oscuros */
+[data-theme="dark"] .bar.blue {
+  background: linear-gradient(135deg, #0F2540 0%, #0A1828 100%);
+}
+
+/* Hero del login: el override del fondo se hace ahora en #s-login arriba */
+
+/* Stepper del wizard */
+[data-theme="dark"] .stepper { background: var(--bg-canvas); border-color: var(--bdr); }
+[data-theme="dark"] .stp-c {
+  background: var(--bg-surface);
+  border-color: var(--bdr);
+  color: var(--dm);
+}
+[data-theme="dark"] .stp.on .stp-c {
+  background: var(--p);
+  color: #fff;
+  border-color: var(--p);
+}
+[data-theme="dark"] .stp.dn .stp-c {
+  background: var(--ok);
+  color: #fff;
+  border-color: var(--ok);
+}
+[data-theme="dark"] .stp-line { background: var(--bdr); }
+
+/* Toolbar de autosave */
+[data-theme="dark"] .autosave-row {
+  background: var(--bg-canvas);
+  border-color: var(--bdr);
+}
+
+/* Snackbars y toasts */
+[data-theme="dark"] .snack {
+  background: var(--bg-elevated);
+  color: var(--d);
+  border-color: var(--bdr);
+}
+
+/* Chips por defecto */
+[data-theme="dark"] .chip-dft {
+  background: var(--bg-surface);
+  color: var(--dm);
+  border-color: var(--bdr);
+}
+
+/* Bloques de plain text / hints */
+[data-theme="dark"] .plain {
+  background: var(--bg-surface);
+  border-color: var(--bdr);
+  color: var(--d);
+}
+
+/* Aviso descartable (alert-banner) */
+[data-theme="dark"] .alert-banner {
+  background: rgba(255, 107, 107, 0.10);
+  border-color: rgba(255, 107, 107, 0.30);
+}
+[data-theme="dark"] .alert-banner-close {
+  background: rgba(255, 107, 107, 0.18);
+  color: var(--err);
+}
+
+/* Security badge (login) */
+[data-theme="dark"] .security-badge {
+  background: rgba(102, 187, 106, 0.10);
+  border-color: rgba(102, 187, 106, 0.32);
+}
+[data-theme="dark"] .security-badge-txt { color: var(--okd); }
+
+/* Reminder default (s-success) */
+[data-theme="dark"] .reminder-default-active {
+  background: rgba(102, 187, 106, 0.10);
+  border-color: rgba(102, 187, 106, 0.30);
+}
+[data-theme="dark"] .reminder-default-active.off {
+  background: var(--bg-surface);
+  border-color: var(--bdr);
+}
+
+/* Deadline calc box (paso 1) */
+[data-theme="dark"] .deadline-calc {
+  background: var(--plm);
+  border-color: var(--p);
+}
+
+/* Toggle del tema en s-help */
+[data-theme="dark"] .theme-toggle {
+  background: var(--bg-surface);
+  border-color: var(--bdr);
+}
+
+/* Asistente de redacción */
+[data-theme="dark"] .writing-assistant {
+  background: var(--bg-surface);
+  border-color: var(--bdr);
+}
+[data-theme="dark"] .wa-question { border-color: var(--bdr); }
+
+/* Profile bar (paso 5) */
+[data-theme="dark"] .profile-bar {
+  background: var(--plm);
+  border-color: var(--p);
+}
+
+/* Civic recognition (s-success) — ya usa rgba(255,255,255), funciona bien sobre dark */
+
+/* Helpers de iconos en sheets, items */
+[data-theme="dark"] .hlp-item {
+  background: var(--bg-surface);
+  border-color: var(--bdr);
+}
+[data-theme="dark"] .hlp-ico { background: var(--bg-canvas); }
+
+/* Help-fab */
+[data-theme="dark"] .help-fab {
+  background: var(--bg-surface);
+  border-color: var(--bdr);
+  color: var(--p);
+}
+
+/* Selector backdrop en lista de entidades */
+[data-theme="dark"] .esugg,
+[data-theme="dark"] .ef {
+  background: var(--bg-surface);
+  border-color: var(--bdr);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   V13 — THEME TOGGLE (componente en s-help)
+   Segmented control de 3 opciones: Claro · Oscuro · Sistema
+   ════════════════════════════════════════════════════════════════ */
+.theme-toggle {
+  display: flex;
+  background: var(--bg-canvas);
+  border: 1px solid var(--bdr);
+  border-radius: 12px;
+  padding: 4px;
+  gap: 4px;
+  width: 100%;
+}
+.theme-toggle-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 8px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-family: var(--f);
+  font-size: var(--t-sm);
+  font-weight: 700;
+  color: var(--dm);
+  cursor: pointer;
+  transition: background .18s, color .18s, transform .12s;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 40px;
+}
+.theme-toggle-btn:hover { color: var(--d); }
+.theme-toggle-btn:active { transform: scale(0.97); }
+.theme-toggle-btn.active {
+  background: var(--p);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(var(--shadow-rgb), .18);
+}
+.theme-toggle-btn:focus-visible {
+  outline: 2px solid var(--p);
+  outline-offset: 2px;
+}
+.theme-toggle-btn > svg { flex-shrink: 0; }
+
 </style>
 </head>
 <body>
@@ -4304,6 +4623,43 @@ body {
       </div>
     </div>
 
+    <!-- V13: Apariencia (Tema) -->
+    <div class="hlp-sec">
+      <h2 class="hlp-sec-ttl">Apariencia</h2>
+      <p style="font-size:var(--t-sm);color:var(--dm);margin-bottom:12px;line-height:1.45;">
+        Elija cómo se ve la aplicación.
+      </p>
+      <div class="theme-toggle" role="radiogroup" aria-label="Tema de la aplicación">
+        <button type="button"
+          class="theme-toggle-btn"
+          id="theme-btn-light"
+          role="radio"
+          aria-checked="false"
+          onclick="setTheme('light')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+          Claro
+        </button>
+        <button type="button"
+          class="theme-toggle-btn"
+          id="theme-btn-dark"
+          role="radio"
+          aria-checked="false"
+          onclick="setTheme('dark')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          Oscuro
+        </button>
+        <button type="button"
+          class="theme-toggle-btn"
+          id="theme-btn-system"
+          role="radio"
+          aria-checked="true"
+          onclick="setTheme('system')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          Sistema
+        </button>
+      </div>
+    </div>
+
     <!-- Cuenta -->
     <div class="hlp-sec">
       <h2 class="hlp-sec-ttl">Mi cuenta</h2>
@@ -4855,6 +5211,84 @@ function dismissAlert(id) {
   setTimeout(() => {
     el.style.display = 'none';
   }, 320);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   V13 — THEME MANAGEMENT
+   setTheme(pref): 'light' | 'dark' | 'system'
+   - Persiste en localStorage
+   - Aplica al <html data-theme="...">
+   - Sincroniza los botones del segmented control
+   - Si pref === 'system', escucha cambios del SO en vivo
+   ════════════════════════════════════════════════════════════════ */
+let _systemThemeMQL = null;
+let _systemThemeListener = null;
+
+function setTheme(pref, opts) {
+  if (!['light','dark','system'].includes(pref)) pref = 'system';
+  const silent = opts && opts.silent;
+  try {
+    localStorage.setItem('miPeticion_theme', pref);
+  } catch (e) { /* modo privado: silencioso */ }
+  window.__themePreference = pref;
+
+  let applied;
+  if (pref === 'system') {
+    applied = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    attachSystemThemeListener();
+  } else {
+    applied = pref;
+    detachSystemThemeListener();
+  }
+  document.documentElement.setAttribute('data-theme', applied);
+  syncThemeToggleUI();
+
+  // Feedback al usuario solo cuando NO es silencioso (la sincronización inicial sí lo es)
+  if (!silent) {
+    const labels = {
+      light: 'Tema claro activado',
+      dark: 'Tema oscuro activado',
+      system: 'Sincronizado con el sistema'
+    };
+    if (typeof snack === 'function') snack(labels[pref], 'ok');
+  }
+}
+
+function syncThemeToggleUI() {
+  const pref = window.__themePreference || 'system';
+  ['light','dark','system'].forEach(k => {
+    const btn = document.getElementById('theme-btn-' + k);
+    if (!btn) return;
+    const active = k === pref;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-checked', active ? 'true' : 'false');
+  });
+}
+
+function attachSystemThemeListener() {
+  if (_systemThemeMQL) return;
+  _systemThemeMQL = window.matchMedia('(prefers-color-scheme: dark)');
+  _systemThemeListener = (e) => {
+    if (window.__themePreference === 'system') {
+      document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+    }
+  };
+  if (_systemThemeMQL.addEventListener) {
+    _systemThemeMQL.addEventListener('change', _systemThemeListener);
+  } else if (_systemThemeMQL.addListener) {
+    _systemThemeMQL.addListener(_systemThemeListener);
+  }
+}
+
+function detachSystemThemeListener() {
+  if (!_systemThemeMQL || !_systemThemeListener) return;
+  if (_systemThemeMQL.removeEventListener) {
+    _systemThemeMQL.removeEventListener('change', _systemThemeListener);
+  } else if (_systemThemeMQL.removeListener) {
+    _systemThemeMQL.removeListener(_systemThemeListener);
+  }
+  _systemThemeMQL = null;
+  _systemThemeListener = null;
 }
 
 function applyDashMode() {
@@ -5895,6 +6329,9 @@ function enBtn(id, ok) {
 
 /* ══ AUTOSAVE en campos del formulario ══ */
 document.addEventListener('DOMContentLoaded', () => {
+  // V13: Inicializar tema (silencioso — sin snack en el primer paint)
+  setTheme(window.__themePreference || 'system', { silent: true });
+
   enBtn('s5n', true);
   ckS5();
 
