@@ -5,6 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
 <title>Mi Petición v13 — Modo claro/oscuro</title>
 <meta name="color-scheme" content="light dark">
+
+<!-- ════════════════════════════════════════════════════════════════
+     Analytics — Contentsquare (Hotjar) tracking
+     defer: no bloquea el primer paint
+     crossorigin: permite a la app capturar errores del script sin exponer datos cruzados
+     IMPORTANTE para producción:
+     - Activar SOLO después de aceptación de consentimiento (Ley 1581 de 2012)
+     - Configurar masking en campos sensibles (data-cs-mask o equivalente)
+     - Actualizar política de privacidad declarando a Contentsquare como procesador
+     ════════════════════════════════════════════════════════════════ -->
+<script src="https://t.contentsquare.net/uxa/07cb022ec01d7.js" defer crossorigin="anonymous"></script>
 <script>
 /* V13: Aplicar tema ANTES del primer paint para evitar el flash.
    Prioridad: preferencia explícita del usuario > preferencia del sistema. */
