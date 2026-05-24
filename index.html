@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-<title>Mi Petición v14 — Logout accesible</title>
+<title>MiPeticion</title>
 <meta name="color-scheme" content="light dark">
 
 <!-- ════════════════════════════════════════════════════════════════
@@ -543,7 +543,7 @@ body {
 ══════════════════════════════════════════════ */
 #s-dash { background: var(--n); }
 .dash-top {
-  background: var(--p); padding: 20px 20px 24px;
+  background: var(--p); padding: 12px 20px 24px;
   color: #fff; position: relative; overflow: hidden;
 }
 .dash-top::after { content:''; position:absolute; width:240px; height:240px; border-radius:50%; background:rgba(15,31,51,.12); top:-80px; right:-70px; pointer-events:none; }
@@ -1424,6 +1424,29 @@ body {
 #s-success {
   background: linear-gradient(180deg, var(--ok) 0%, var(--okd) 100%);
   color: #fff;
+}
+/* V15-fix: en modo oscuro, --ok y --okd se vuelven verdes CLAROS,
+   lo que vuelve el texto blanco ilegible sobre el fondo. Mantenemos
+   verdes oscuros saturados solo para esta pantalla de éxito. */
+[data-theme="dark"] #s-success {
+  background: linear-gradient(180deg, #1F7A24 0%, #155818 100%);
+  color: #fff;
+}
+/* El botón "Volver al inicio" también necesita más contraste sobre el fondo verde */
+[data-theme="dark"] .success-back-btn {
+  background: rgba(255,255,255,.20);
+  border: 1.5px solid rgba(255,255,255,.45);
+  color: #fff;
+}
+[data-theme="dark"] .success-back-btn:hover {
+  background: rgba(255,255,255,.32);
+  border-color: rgba(255,255,255,.65);
+}
+/* Asegurar que textos secundarios mantienen contraste */
+[data-theme="dark"] #s-success .success-sub,
+[data-theme="dark"] #s-success .success-radicado-lbl,
+[data-theme="dark"] #s-success .success-radicado-meta {
+  color: rgba(255,255,255,.92) !important;
 }
 .success-hero {
   padding: 40px 24px 28px;
@@ -2916,6 +2939,190 @@ body {
   border-color: #0A1828;
 }
 
+/* V14b: Cuando el simple-header vive dentro del hero (.dash-top),
+   compensa el padding propio del hero para que los botones queden
+   en EXACTAMENTE la misma posición visual que en vista simple. */
+.simple-header.on-hero {
+  padding: 0 0 8px 0;  /* el hero ya tiene padding lateral; solo separamos del greeting */
+}
+
+/* ════════════════════════════════════════════════════════════════
+   V15 — DOC PREVIEW
+   Vista previa del documento legal redactado por la asistente IA.
+   Estética: hoja de papel oficial, tipografía serif para el cuerpo,
+   sin emojis, formato preparado para verse "como impreso".
+   ════════════════════════════════════════════════════════════════ */
+.ai-notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 16px 0;
+  padding: 12px 14px;
+  background: var(--pl);
+  border: 1.5px solid var(--p);
+  border-radius: var(--r12);
+}
+.ai-notice-ico {
+  width: 36px; height: 36px;
+  border-radius: var(--r8);
+  background: var(--p);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.ai-notice-body { flex: 1; min-width: 0; }
+.ai-notice-ttl {
+  font-size: var(--t-sm);
+  font-weight: 800;
+  color: var(--d);
+  line-height: 1.3;
+}
+.ai-notice-sub {
+  font-size: 12px;
+  color: var(--dm);
+  margin-top: 2px;
+  line-height: 1.45;
+}
+
+/* Hoja de papel (página completa) */
+.doc-preview {
+  padding: 14px 14px 0;
+}
+.doc-page {
+  background: #FFFEF8;
+  border-radius: 6px;
+  padding: 32px 28px 28px;
+  font-family: 'Georgia', 'Times New Roman', serif;
+  color: #1A1A1A;
+  font-size: 14px;
+  line-height: 1.65;
+  box-shadow:
+    0 6px 24px rgba(15,31,51,.10),
+    0 2px 6px rgba(15,31,51,.06);
+  position: relative;
+}
+/* Cinta decorativa que indica que es documento oficial */
+.doc-page::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 28px; right: 28px;
+  height: 3px;
+  background: var(--p);
+  border-radius: 0 0 3px 3px;
+}
+
+.doc-header { margin-bottom: 20px; }
+.doc-city {
+  font-size: 13px;
+  text-align: right;
+  color: #1A1A1A;
+}
+.doc-dest {
+  margin-bottom: 20px;
+  font-size: 13px;
+}
+.doc-dest-label {
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.doc-dest-name {
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 14px;
+}
+.doc-dest-city {
+  font-style: italic;
+  color: #555;
+}
+.doc-subject {
+  margin: 18px 0;
+  font-size: 13px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #D8D2C0;
+}
+.doc-label { font-weight: 700; margin-right: 6px; }
+.doc-greeting {
+  margin-bottom: 14px;
+  font-weight: 600;
+}
+.doc-para {
+  margin-bottom: 12px;
+  text-align: justify;
+  hyphens: auto;
+}
+.doc-section-ttl {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  margin: 18px 0 10px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #E4DDC8;
+  color: #1A1A1A;
+}
+.doc-facts p, .doc-request p { margin-bottom: 8px; }
+.doc-facts ol, .doc-request ol {
+  padding-left: 22px;
+  margin: 0;
+}
+.doc-facts ol li, .doc-request ol li {
+  margin-bottom: 8px;
+  padding-left: 4px;
+}
+.doc-signature {
+  margin-top: 32px;
+}
+.doc-sign-line {
+  width: 200px;
+  height: 1px;
+  background: #555;
+  margin: 36px 0 4px;
+}
+.doc-sign-name {
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 13px;
+}
+.doc-sign-doc {
+  font-size: 12px;
+  color: #555;
+  margin-top: 2px;
+}
+.doc-footer {
+  margin-top: 28px;
+  padding-top: 12px;
+  border-top: 1px dashed #C9C2AC;
+  text-align: center;
+  font-size: 10px;
+  font-style: italic;
+  color: #888;
+  font-family: var(--f);
+}
+
+.doc-preview-actions {
+  padding: 16px 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Botón de vista previa en s-rev */
+.preview-btn {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+/* En modo oscuro, la "hoja" sigue siendo crema clara (es un documento) */
+[data-theme="dark"] .doc-page {
+  background: #FAF8EF;
+  color: #1A1A1A;
+  box-shadow:
+    0 6px 24px rgba(0,0,0,.4),
+    0 2px 6px rgba(0,0,0,.25);
+}
+
 </style>
 </head>
 <body>
@@ -3403,6 +3610,18 @@ body {
 
     <!-- Hero personalizado -->
     <div class="dash-top">
+      <!-- V14b: Header de controles en fila propia arriba del greeting,
+           igual posición que en la vista simple -->
+      <div class="simple-header on-hero">
+        <button class="simple-header-btn on-dark" onclick="openNotifications()" aria-label="Notificaciones: tiene 1 plazo por vencer">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="simple-header-badge" aria-hidden="true">1</span>
+        </button>
+        <button class="simple-header-btn on-dark" onclick="confirmLogout()" aria-label="Cerrar sesión">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
+
       <div class="dt-row">
         <div>
           <p class="dt-greet">Qué bueno verle,</p>
@@ -3410,16 +3629,6 @@ body {
           <button class="dash-mode-pill" onclick="toggleDashMode()" aria-label="Cambiar al modo simple">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             Vista detallada · cambiar
-          </button>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <!-- V14: Botones unificados con la vista simple (notificaciones + logout) -->
-          <button class="simple-header-btn on-dark" onclick="openNotifications()" aria-label="Notificaciones: tiene 1 plazo por vencer">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-            <span class="simple-header-badge" aria-hidden="true">1</span>
-          </button>
-          <button class="simple-header-btn on-dark" onclick="confirmLogout()" aria-label="Cerrar sesión">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
           </button>
         </div>
       </div>
@@ -3518,16 +3727,17 @@ body {
           </div>
         </button>
 
-        <!-- Recordatorio de vencimiento — tarea, no destino -->
-        <button onclick="openReminder()"
+        <!-- V15: Descargar PDF de la última petición — atajo realmente útil
+             (el recordatorio ya está activo por defecto desde v10, era redundante). -->
+        <button onclick="downloadLastPetitionPdf()"
           style="background:var(--sur);border:1.5px solid var(--bdr);border-radius:var(--r16);padding:16px 14px;text-align:left;cursor:pointer;min-height:104px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:var(--sh1);-webkit-tap-highlight-color:transparent;"
-          aria-label="Activar recordatorio antes del vencimiento del plazo legal">
+          aria-label="Descargar en PDF mi última petición para mostrarla o imprimirla">
           <div style="width:36px;height:36px;border-radius:var(--r8);background:var(--pl);display:flex;align-items:center;justify-content:center;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--p)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--p)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg>
           </div>
           <div>
-            <div style="font-size:var(--t-sm);font-weight:800;color:var(--d);line-height:1.3;">Que me recuerden</div>
-            <div style="font-size:11px;color:var(--dh);margin-top:2px;font-weight:500;">Avisamos antes del vencimiento</div>
+            <div style="font-size:var(--t-sm);font-weight:800;color:var(--d);line-height:1.3;">Descargar última petición</div>
+            <div style="font-size:11px;color:var(--dh);margin-top:2px;font-weight:500;">PDF para mostrar o imprimir</div>
           </div>
         </button>
       </div>
@@ -3539,9 +3749,9 @@ body {
         <h2 class="sec-ttl">Su última petición</h2>
         <button class="btn-lnk" style="font-size:var(--t-sm);" onclick="nPet()" aria-label="Ver todas mis peticiones">Ver todas</button>
       </div>
-      <article class="pc" onclick="go('s-case')" role="link" tabindex="0"
+      <article class="pc" onclick="openCase('proceso')" role="link" tabindex="0"
         aria-label="Petición de pensión ante Colpensiones. En proceso, le quedan 7 días."
-        onkeypress="if(event.key==='Enter')go('s-case')">
+        onkeypress="if(event.key==='Enter')openCase('proceso')">
         <div class="pc-accent wrn" aria-hidden="true"></div>
         <div class="pc-body">
           <div class="pc-top">
@@ -3659,9 +3869,9 @@ body {
         <button class="chip chip-dft" data-filter="enviada" style="min-height:34px;border:none;cursor:pointer;flex-shrink:0;" onclick="filterPet(this,'enviada')" aria-pressed="false">Recién enviadas</button>
       </div>
 
-      <article class="pc" data-status="respondida" onclick="go('s-case')" role="link" tabindex="0"
+      <article class="pc" data-status="respondida" onclick="openCase('respondida')" role="link" tabindex="0"
         aria-label="Petición de salud ante EPS Sura. Ya le respondieron."
-        onkeypress="if(event.key==='Enter')go('s-case')">
+        onkeypress="if(event.key==='Enter')openCase('respondida')">
         <div class="pc-accent ok" aria-hidden="true"></div>
         <div class="pc-body">
           <div class="pc-top">
@@ -3683,9 +3893,9 @@ body {
         </div>
       </article>
 
-      <article class="pc" data-status="proceso" onclick="go('s-case')" role="link" tabindex="0"
+      <article class="pc" data-status="proceso" onclick="openCase('proceso')" role="link" tabindex="0"
         aria-label="Petición de pensión ante Colpensiones. En proceso, le quedan 7 días."
-        onkeypress="if(event.key==='Enter')go('s-case')">
+        onkeypress="if(event.key==='Enter')openCase('proceso')">
         <div class="pc-accent wrn" aria-hidden="true"></div>
         <div class="pc-body">
           <div class="pc-top">
@@ -3713,9 +3923,9 @@ body {
         </div>
       </article>
 
-      <article class="pc" data-status="enviada" onclick="go('s-case')" role="link" tabindex="0"
+      <article class="pc" data-status="enviada" onclick="openCase('enviada')" role="link" tabindex="0"
         aria-label="Petición de servicios públicos ante EPM. Ya la enviamos."
-        onkeypress="if(event.key==='Enter')go('s-case')">
+        onkeypress="if(event.key==='Enter')openCase('enviada')">
         <div class="pc-accent p" aria-hidden="true"></div>
         <div class="pc-body">
           <div class="pc-top">
@@ -4589,6 +4799,13 @@ body {
 
   <div class="rv-acts">
     <p class="legal-txt" role="note">Al enviar, armamos su PDF oficial. La entidad tiene <strong>15 días hábiles</strong> para responderle (Ley 1755 de 2015).</p>
+
+    <!-- V15: Vista previa del documento redactado por la IA -->
+    <button class="btn btn-soft preview-btn" onclick="openDocPreview()" aria-label="Ver mi petición redactada por la asistente">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      Ver mi petición redactada
+    </button>
+
     <button class="btn btn-fill" id="sendBtn" onclick="doSend()" aria-label="Enviar mi petición a la entidad">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
       Enviar mi petición
@@ -4700,6 +4917,109 @@ body {
      • Línea de tiempo cronológica
      • Escalamiento condicional (vencido)
 ═══════════════════════════════════════ -->
+<!-- V15: VISTA PREVIA DEL DOCUMENTO REDACTADO POR IA
+     Muestra la petición completa en formato carta legal, generada a partir
+     de los datos del wizard. El usuario puede revisarla antes de enviar. -->
+<div id="s-doc-preview" class="screen" role="main" aria-label="Vista previa del documento">
+  <div class="bar blue">
+    <button class="bar-btn" onclick="closeDocPreview()" style="color:#fff;" aria-label="Cerrar vista previa">‹</button>
+    <span class="bar-title">Vista previa</span>
+  </div>
+
+  <div class="scroll pb">
+    <!-- Aviso IA al tope -->
+    <div class="ai-notice" role="note" aria-label="Aviso de redacción asistida por IA">
+      <div class="ai-notice-ico" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      </div>
+      <div class="ai-notice-body">
+        <div class="ai-notice-ttl">Redactado por la asistente</div>
+        <div class="ai-notice-sub">Su información ordenada en formato oficial. Revísela antes de enviar.</div>
+      </div>
+    </div>
+
+    <!-- Documento en formato carta legal -->
+    <div class="doc-preview" id="doc-preview-body">
+      <div class="doc-page">
+
+        <!-- Encabezado oficial -->
+        <header class="doc-header">
+          <div class="doc-city" id="dp-city-line">Bogotá D.C., <span id="dp-date">7 de mayo de 2026</span></div>
+        </header>
+
+        <!-- Destinatario -->
+        <div class="doc-dest">
+          <div class="doc-dest-label">Señores</div>
+          <div class="doc-dest-name" id="dp-entity">COLPENSIONES</div>
+          <div class="doc-dest-city" id="dp-entity-city">Ciudad</div>
+        </div>
+
+        <!-- Asunto -->
+        <div class="doc-subject">
+          <span class="doc-label">Asunto:</span>
+          <span id="dp-subject">Derecho de Petición — Solicitud particular</span>
+        </div>
+
+        <!-- Saludo -->
+        <p class="doc-greeting" id="dp-greeting">Respetados señores:</p>
+
+        <!-- Cuerpo -->
+        <p class="doc-para" id="dp-intro">
+          Yo, <b id="dp-name">CARLOS EDUARDO RODRÍGUEZ</b>, mayor de edad, identificado con cédula de ciudadanía No. <b id="dp-doc">52.891.134</b>, domiciliado en la ciudad de <b id="dp-domicile">Bogotá D.C.</b>, en uso del derecho consagrado en el <b>artículo 23 de la Constitución Política de Colombia</b> y reglamentado por la <b>Ley 1755 de 2015</b>, respetuosamente me permito formular ante ustedes la siguiente petición:
+        </p>
+
+        <h3 class="doc-section-ttl">HECHOS</h3>
+        <div class="doc-para doc-facts" id="dp-facts">
+          <!-- Inyectado por JS desde D.facts, formateado en párrafos -->
+        </div>
+
+        <h3 class="doc-section-ttl">PETICIÓN</h3>
+        <p class="doc-para" id="dp-request-intro">Con base en los hechos expuestos, solicito a ustedes:</p>
+        <div class="doc-para doc-request" id="dp-request">
+          <!-- Inyectado por JS desde D.request -->
+        </div>
+
+        <h3 class="doc-section-ttl">FUNDAMENTOS DE DERECHO</h3>
+        <p class="doc-para">
+          La presente solicitud se fundamenta en el <b>artículo 23 de la Constitución Política</b>, que consagra el derecho fundamental de petición, así como en la <b>Ley 1755 de 2015</b>, que regula el ejercicio de este derecho ante las autoridades. Conforme al artículo 14 de la mencionada ley, las peticiones particulares deberán ser resueltas dentro de los <b id="dp-deadline-days">quince (15) días hábiles</b> siguientes a su recepción.
+        </p>
+
+        <h3 class="doc-section-ttl">NOTIFICACIONES</h3>
+        <p class="doc-para">
+          Recibiré notificaciones en el correo electrónico <b id="dp-email">carlos.rodriguez@email.com</b> y al teléfono <b id="dp-phone">+57 300 000 0000</b>.
+        </p>
+
+        <!-- Firma -->
+        <div class="doc-signature">
+          <p class="doc-para">Atentamente,</p>
+          <div class="doc-sign-line"></div>
+          <div class="doc-sign-name" id="dp-sign-name">CARLOS EDUARDO RODRÍGUEZ</div>
+          <div class="doc-sign-doc">C.C. <span id="dp-sign-doc">52.891.134</span></div>
+        </div>
+
+        <!-- Pie con marca de generación -->
+        <footer class="doc-footer">
+          <span>Documento generado por Mi Petición · Redacción asistida por IA</span>
+        </footer>
+
+      </div>
+    </div>
+
+    <!-- Acciones bajo el documento -->
+    <div class="doc-preview-actions">
+      <button class="btn btn-fill" onclick="closeDocPreview()" aria-label="Volver a revisión y enviar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+        Está perfecto, volver a enviar
+      </button>
+      <button class="btn btn-soft" onclick="closeDocPreview()" aria-label="Volver a editar mi petición">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Necesito cambiar algo
+      </button>
+    </div>
+  </div>
+</div>
+
+
 <div id="s-case" class="screen" role="main" aria-label="Detalle del caso">
   <div class="case-bar">
     <button class="bar-btn" onclick="go('s-pet')" aria-label="Volver a mis peticiones">
@@ -4716,7 +5036,7 @@ body {
     <div class="case-summary">
       <h1 class="case-summary-name" id="case-name">Petición de Pensión</h1>
       <p class="case-summary-meta" id="case-meta">Colpensiones · Enviada el 4 feb 2026</p>
-      <span class="case-summary-status">
+      <span class="case-summary-status" id="case-status-chip">
         <span class="chip chip-wrn">
           <span class="chip-dot" aria-hidden="true"></span>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -4734,6 +5054,27 @@ body {
       <div class="case-deadline-info">
         <div class="case-deadline-ttl" id="case-deadline-ttl">Le quedan 7 días para que respondan</div>
         <div class="case-deadline-sub" id="case-deadline-sub">El plazo legal vence el <b>14 de mayo de 2026</b>. Si Colpensiones no responde a tiempo, no se preocupe: le explicamos qué puede hacer.</div>
+      </div>
+    </div>
+
+    <!-- V15: Bloque de RESPUESTA (solo visible cuando status = 'respondida') -->
+    <div class="case-block case-response-block" id="case-response-block" style="display:none;border-color:var(--ok);background:var(--okl);" role="region" aria-label="Respuesta de la entidad">
+      <h2 class="case-block-ttl" style="color:var(--okd);">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+        <span id="case-response-title">Respuesta de la entidad</span>
+      </h2>
+      <p style="font-size:var(--t-sm);color:var(--d);line-height:1.55;margin-bottom:12px;" id="case-response-summary">
+        La entidad respondió a su petición.
+      </p>
+      <div class="case-doc-row" style="background:var(--sur);">
+        <div class="case-doc-ico" style="background:var(--okl);color:var(--okd);" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </div>
+        <div class="case-doc-info">
+          <div class="case-doc-name" id="case-response-doc-name">Respuesta.pdf</div>
+          <div class="case-doc-meta">Documento de respuesta oficial</div>
+        </div>
+        <button class="case-doc-action" onclick="successDownloadPdf()" aria-label="Descargar respuesta">Ver</button>
       </div>
     </div>
 
@@ -4759,7 +5100,7 @@ body {
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         Cómo va su caso
       </h2>
-      <ol style="list-style:none;padding:0;margin:0;">
+      <ol id="case-timeline" style="list-style:none;padding:0;margin:0;">
         <li class="tl-item dn">
           <div class="tl-c" aria-label="Completado">✓</div>
           <div class="tl-cont"><div class="tl-nm">La creó usted</div><div class="tl-dt">4 de febrero, 2026 — 10:32 am</div></div>
@@ -4787,15 +5128,15 @@ body {
       </h2>
       <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:6px;">
         <span style="font-size:var(--t-xs);color:var(--dm);font-weight:600;">N° de radicado:</span>
-        <span class="case-radicado-pill">DP-2026-08842</span>
+        <span class="case-radicado-pill" id="case-radicado-pill">DP-2026-08842</span>
       </div>
       <div class="case-doc-row">
         <div class="case-doc-ico" aria-hidden="true">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
         </div>
         <div class="case-doc-info">
-          <div class="case-doc-name">Peticion-Pension-DP-2026-08842.pdf</div>
-          <div class="case-doc-meta">PDF · 184 KB · Enviada 4 feb 2026</div>
+          <div class="case-doc-name" id="case-doc-name">Peticion-Pension-DP-2026-08842.pdf</div>
+          <div class="case-doc-meta" id="case-doc-meta">PDF · 184 KB · Enviada 4 feb 2026</div>
         </div>
         <button class="case-doc-action" onclick="successDownloadPdf()" aria-label="Descargar documento original">Descargar</button>
       </div>
@@ -5629,6 +5970,277 @@ function doLogout() {
   if (typeof snack === 'function') snack('Sesión cerrada', 'ok');
 }
 
+/* ════════════════════════════════════════════════════════════════
+   V15 — DOCUMENT PREVIEW (asistencia de IA)
+   Genera el documento en formato carta legal a partir de los datos
+   del wizard (D.facts, D.request, D.entity, D.petType, etc.).
+   En producción aquí se llamaría a un endpoint de IA real;
+   por ahora la "redacción" usa los datos del usuario y los reformatea.
+   ════════════════════════════════════════════════════════════════ */
+function openDocPreview() {
+  // Fecha actual
+  const now = new Date();
+  const dateEl = document.getElementById('dp-date');
+  if (dateEl) dateEl.textContent = formatDateLong(now);
+
+  // Ciudad (default Bogotá si no se completó)
+  const cityEl = document.getElementById('dp-city-line');
+  if (cityEl) {
+    const cityFirst = (D.city || 'Bogotá D.C.').replace(/,.*/, '');
+    cityEl.innerHTML = `${cityFirst}, <span id="dp-date">${formatDateLong(now)}</span>`;
+  }
+
+  // Entidad
+  const entEl = document.getElementById('dp-entity');
+  if (entEl) entEl.textContent = (D.entity || 'Entidad').toUpperCase();
+
+  const entCityEl = document.getElementById('dp-entity-city');
+  if (entCityEl) entCityEl.textContent = D.city || 'Ciudad';
+
+  // Asunto según tipo de petición
+  const subjectMap = {
+    informacion: 'Derecho de Petición — Solicitud de información',
+    particular:  'Derecho de Petición — Solicitud particular',
+    general:     'Derecho de Petición — Solicitud de interés general',
+    consulta:    'Derecho de Petición — Consulta'
+  };
+  const subjEl = document.getElementById('dp-subject');
+  if (subjEl) subjEl.textContent = subjectMap[D.petType] || subjectMap.particular;
+
+  // Nombre + documento + email — desde inputs del wizard si existen
+  const fullName = (document.getElementById('petN')?.value || 'Carlos Eduardo Rodríguez').trim();
+  const docNum   = (document.getElementById('petD')?.value || '52.891.134').trim();
+  const email    = (document.getElementById('petE')?.value || 'carlos.rodriguez@email.com').trim();
+  const phone    = (document.getElementById('petT')?.value || '+57 300 000 0000').trim();
+
+  setIfExists('dp-name', fullName.toUpperCase());
+  setIfExists('dp-doc', docNum);
+  setIfExists('dp-domicile', (D.city || 'Bogotá D.C.').replace(/,.*/, ''));
+  setIfExists('dp-email', email);
+  setIfExists('dp-phone', phone);
+  setIfExists('dp-sign-name', fullName.toUpperCase());
+  setIfExists('dp-sign-doc', docNum);
+
+  // Plazo legal según tipo
+  const deadlineMap = {
+    informacion: 'diez (10) días hábiles',
+    particular:  'quince (15) días hábiles',
+    general:     'quince (15) días hábiles',
+    consulta:    'treinta (30) días hábiles'
+  };
+  setIfExists('dp-deadline-days', deadlineMap[D.petType] || deadlineMap.particular);
+
+  // Hechos: tomar D.facts y formatearlos como párrafos
+  const factsEl = document.getElementById('dp-facts');
+  if (factsEl) {
+    factsEl.innerHTML = formatFactsForDoc(D.facts || '');
+  }
+
+  // Petición: tomar D.request y formatearla
+  const reqEl = document.getElementById('dp-request');
+  if (reqEl) {
+    reqEl.innerHTML = formatRequestForDoc(D.request || '');
+  }
+
+  go('s-doc-preview');
+}
+
+function closeDocPreview() {
+  go('s-rev');
+}
+
+function setIfExists(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value;
+}
+
+/* Formatea los hechos en párrafos o lista numerada según longitud */
+function formatFactsForDoc(facts) {
+  facts = facts.trim();
+  if (!facts) {
+    return '<p><em style="color:#888;">(No hay hechos descritos. Vuelva a revisión y complete esta sección.)</em></p>';
+  }
+  // Si hay múltiples líneas separadas por salto, las convertimos en lista numerada
+  const lines = facts.split(/\n+/).map(l => l.trim()).filter(Boolean);
+  if (lines.length > 1) {
+    return '<ol>' + lines.map(l => `<li>${escapeHtml(l)}.</li>`).join('') + '</ol>';
+  }
+  // Si es un solo bloque largo, lo dejamos como párrafo
+  return `<p>${escapeHtml(facts)}.</p>`;
+}
+
+/* Formatea la solicitud en lista numerada (formato estándar legal) */
+function formatRequestForDoc(request) {
+  request = request.trim();
+  if (!request) {
+    return '<p><em style="color:#888;">(No hay solicitud específica. Vuelva a revisión y complete esta sección.)</em></p>';
+  }
+  const lines = request.split(/\n+/).map(l => l.trim()).filter(Boolean);
+  if (lines.length > 1) {
+    return '<ol>' + lines.map(l => `<li>${escapeHtml(l)}.</li>`).join('') + '</ol>';
+  }
+  return `<p>${escapeHtml(request)}.</p>`;
+}
+
+/* Escape básico para evitar inyección al renderizar contenido del usuario */
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/* V15: Datos de las 3 peticiones mockup, una por estado.
+   La pantalla s-case es UNA sola y se renderiza dinámicamente. */
+const CASE_DATA = {
+  proceso: {
+    name: 'Petición de Pensión',
+    entity: 'Colpensiones',
+    radicado: 'DP-2026-08842',
+    dateSent: '4 feb 2026',
+    chipClass: 'chip-wrn',
+    chipIcon: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+    chipText: 'En proceso',
+    daysRemaining: 7,
+    deadlineDate: '14 de mayo de 2026',
+    deadlineTitle: 'Le quedan 7 días para que respondan',
+    deadlineSub: 'El plazo legal vence el <b>14 de mayo de 2026</b>. Si Colpensiones no responde a tiempo, no se preocupe: le explicamos qué puede hacer.',
+    showEscalate: false,
+    showDeadline: true,
+    timeline: [
+      { state: 'dn', name: 'La creó usted', date: '4 de febrero, 2026 — 10:32 am', note: '' },
+      { state: 'dn', name: 'La enviamos a Colpensiones', date: '4 de febrero, 2026 — 10:35 am', note: 'Salió por correo certificado.' },
+      { state: 'cur', name: 'La entidad la recibió', date: '5 de febrero, 2026', note: 'Le asignaron el radicado oficial DP-2026-08842.' },
+      { state: 'pnd', name: 'Esperando la respuesta', date: 'Tienen plazo hasta el 14 mayo, 2026', note: '' }
+    ],
+    docName: 'Peticion-Pension-DP-2026-08842.pdf',
+    docSize: '184 KB',
+    showResponse: false
+  },
+  respondida: {
+    name: 'Petición de Salud',
+    entity: 'EPS Sura',
+    radicado: 'DP-2026-07321',
+    dateSent: '12 mar 2026',
+    chipClass: 'chip-ok',
+    chipIcon: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>',
+    chipText: 'Ya respondieron',
+    daysRemaining: null,
+    deadlineDate: '',
+    deadlineTitle: '',
+    deadlineSub: '',
+    showEscalate: false,
+    showDeadline: false,
+    timeline: [
+      { state: 'dn', name: 'La creó usted', date: '12 de marzo, 2026 — 14:08 pm', note: '' },
+      { state: 'dn', name: 'La enviamos a EPS Sura', date: '12 de marzo, 2026 — 14:11 pm', note: 'Salió por correo certificado.' },
+      { state: 'dn', name: 'La entidad la recibió', date: '13 de marzo, 2026', note: 'Le asignaron el radicado oficial DP-2026-07321.' },
+      { state: 'dn', name: 'EPS Sura respondió', date: '23 de marzo, 2026', note: 'Respondieron en 8 días hábiles, antes del plazo legal.' }
+    ],
+    docName: 'Peticion-Salud-DP-2026-07321.pdf',
+    docSize: '156 KB',
+    showResponse: true,
+    responseTitle: 'Respuesta de EPS Sura',
+    responseSummary: 'La entidad confirmó la autorización de su cita con cardiología para el 5 de abril de 2026. Adjuntan la orden médica firmada y el número de turno.',
+    responseDoc: 'Respuesta-Sura-DP-2026-07321.pdf'
+  },
+  enviada: {
+    name: 'Petición de Servicios Públicos',
+    entity: 'EPM',
+    radicado: 'DP-2026-09014',
+    dateSent: '28 ene 2026',
+    chipClass: 'chip-inf',
+    chipIcon: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>',
+    chipText: 'Recién enviada',
+    daysRemaining: 15,
+    deadlineDate: '18 de febrero de 2026',
+    deadlineTitle: 'Esperando confirmación de recepción',
+    deadlineSub: 'La enviamos hace pocas horas a EPM. En cuanto la reciban formalmente, le asignan un radicado y empieza a contar el plazo de <b>15 días hábiles</b>.',
+    showEscalate: false,
+    showDeadline: true,
+    timeline: [
+      { state: 'dn', name: 'La creó usted', date: '28 de enero, 2026 — 09:14 am', note: '' },
+      { state: 'cur', name: 'La enviamos a EPM', date: '28 de enero, 2026 — 09:18 am', note: 'Salió por correo certificado. Confirmación pendiente.' },
+      { state: 'pnd', name: 'La entidad la recibirá', date: 'Esperando confirmación', note: '' },
+      { state: 'pnd', name: 'Esperando la respuesta', date: 'El plazo empezará al recibirla', note: '' }
+    ],
+    docName: 'Peticion-Servicios-DP-2026-09014.pdf',
+    docSize: '162 KB',
+    showResponse: false
+  }
+};
+
+/* V15: Abrir s-case con los datos del estado correspondiente */
+function openCase(status) {
+  const data = CASE_DATA[status] || CASE_DATA.proceso;
+  D.currentCaseStatus = status;
+
+  // Resumen superior
+  const nm = document.getElementById('case-name');
+  if (nm) nm.textContent = data.name;
+  const meta = document.getElementById('case-meta');
+  if (meta) meta.textContent = `${data.entity} · Enviada el ${data.dateSent}`;
+  const stEl = document.getElementById('case-status-chip');
+  if (stEl) {
+    stEl.innerHTML = `<span class="chip ${data.chipClass}"><span class="chip-dot" aria-hidden="true"></span>${data.chipIcon}${data.chipText}</span>`;
+  }
+
+  // Bloque deadline
+  const deadlineEl = document.getElementById('case-deadline');
+  if (deadlineEl) {
+    if (data.showDeadline) {
+      deadlineEl.style.display = '';
+      const numEl = document.getElementById('case-days-num');
+      if (numEl) numEl.textContent = data.daysRemaining;
+      const ttlEl = document.getElementById('case-deadline-ttl');
+      if (ttlEl) ttlEl.textContent = data.deadlineTitle;
+      const subEl = document.getElementById('case-deadline-sub');
+      if (subEl) subEl.innerHTML = data.deadlineSub;
+    } else {
+      deadlineEl.style.display = 'none';
+    }
+  }
+
+  // Timeline
+  const tl = document.getElementById('case-timeline');
+  if (tl) {
+    tl.innerHTML = data.timeline.map(step => `
+      <li class="tl-item ${step.state}">
+        <div class="tl-c" aria-label="${step.state === 'dn' ? 'Completado' : step.state === 'cur' ? 'Etapa actual' : 'Pendiente'}">${step.state === 'dn' ? '✓' : step.state === 'cur' ? '●' : '○'}</div>
+        <div class="tl-cont"><div class="tl-nm">${step.name}</div><div class="tl-dt">${step.date}</div>${step.note ? `<div class="tl-nt">${step.note}</div>` : ''}</div>
+      </li>
+    `).join('');
+  }
+
+  // Documento
+  const docNm = document.getElementById('case-doc-name');
+  if (docNm) docNm.textContent = data.docName;
+  const docSz = document.getElementById('case-doc-meta');
+  if (docSz) docSz.textContent = `PDF · ${data.docSize} · Enviada ${data.dateSent}`;
+  const radEl = document.getElementById('case-radicado-pill');
+  if (radEl) radEl.textContent = data.radicado;
+
+  // Bloque respuesta (solo para 'respondida')
+  const respBlock = document.getElementById('case-response-block');
+  if (respBlock) {
+    if (data.showResponse) {
+      respBlock.style.display = '';
+      const rTtl = document.getElementById('case-response-title');
+      if (rTtl) rTtl.textContent = data.responseTitle;
+      const rSum = document.getElementById('case-response-summary');
+      if (rSum) rSum.textContent = data.responseSummary;
+      const rDoc = document.getElementById('case-response-doc-name');
+      if (rDoc) rDoc.textContent = data.responseDoc;
+    } else {
+      respBlock.style.display = 'none';
+    }
+  }
+
+  go('s-case');
+}
+
 function applyDashMode() {
   const simple = document.getElementById('dash-simple');
   const advanced = document.getElementById('dash-advanced');
@@ -5713,6 +6325,13 @@ function successConfigReminder() {
 function successDownloadPdf() {
   snack('Armando su PDF oficial...', 'info', '📥');
   setTimeout(() => snack('Listo, su PDF está descargado', 'ok', '✅'), 1600);
+}
+
+/* V15: Descargar PDF de la última petición — atajo del dashboard */
+function downloadLastPetitionPdf() {
+  const rad = D.lastRadicado || 'su última petición';
+  snack('Preparando ' + rad + '...', 'info', '📄');
+  setTimeout(() => snack('Listo, su petición está descargada', 'ok', '✅'), 1600);
 }
 
 /* ══ V8 — Generar tutela (desde caso vencido) ══ */
