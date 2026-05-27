@@ -41,6 +41,17 @@
     window.__themePreference = 'system';
   }
 
+  // V19: Suprimir transiciones durante la carga inicial para evitar flash de tema.
+  // La clase se quita con requestAnimationFrame() después del primer paint.
+  document.addEventListener('DOMContentLoaded', function() {
+    document.body.classList.add('no-transition');
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() {
+        document.body.classList.remove('no-transition');
+      });
+    });
+  });
+
   // V17: Bloquear orientación a portrait. La app solo se diseñó para vertical.
   // El API Screen Orientation requiere fullscreen en algunos navegadores; si falla, el CSS también bloquea.
   try {
@@ -173,6 +184,10 @@ body {
   min-height: 100vh;
   transition: background-color .22s ease, color .22s ease;
 }
+/* V19: suprimir transición en primera carga para evitar flash de tema.
+   La clase .theme-ready se agrega por JS tras el primer paint. */
+body.no-transition,
+body.no-transition * { transition: none !important; }
 
 #app {
   width: 100%;
@@ -335,9 +350,12 @@ body {
   letter-spacing: .02em; position: relative;
 }
 .btn:disabled { opacity: .4; cursor: not-allowed; }
-.btn:disabled::after {
-  content: attr(data-disabled-reason);
-  display: none; /* visible solo a AT mediante aria-describedby */
+/* V19: El motivo de bloqueo se comunica via aria-describedby apuntando
+   a un elemento .btn-disabled-reason oculto visualmente pero presente en el DOM.
+   Asegurar que cada botón con data-disabled-reason tenga un <span class="btn-disabled-reason"> asociado. */
+.btn-disabled-reason {
+  position: absolute; width: 1px; height: 1px;
+  overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap;
 }
 
 /* Primario */
@@ -610,6 +628,8 @@ body {
 .ab-row { display:flex; align-items:center; gap:10px; }
 .ab-dot { width:8px; height:8px; border-radius:50%; background:var(--err); flex-shrink:0; animation: blink 1.6s ease-in-out infinite; }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.35} }
+/* V19: respetar preferencia de movimiento reducido — punto estático en lugar de parpadeo */
+@media (prefers-reduced-motion: reduce) { .ab-dot { animation: none; opacity: 1; } }
 /* R1: texto alerta con contraste ≥ 4.5:1 */
 .ab-ttl { font-size:var(--t-sm); font-weight:800; color:var(--errd); flex:1; }
 .ab-body { font-size:var(--t-sm); color:var(--errd); margin-top:6px; line-height:1.5; }
@@ -654,8 +674,8 @@ body {
 .ptl-step.dn  .ptl-dot { background:var(--ok);  color:#fff; }
 .ptl-step.cur .ptl-dot { background:var(--p);   color:#fff; box-shadow:0 0 0 3px var(--pl); }
 .ptl-step.pnd .ptl-dot { background:var(--bdr); color:var(--dm); }
-/* R1: ptl-lbl contraste */
-.ptl-lbl { font-size:9px; font-weight:700; color:var(--dm); text-align:center; }
+/* R1: ptl-lbl contraste — V19: subido de 9px a 11px (mínimo WCAG 1.4.4) */
+.ptl-lbl { font-size:11px; font-weight:700; color:var(--dm); text-align:center; }
 .ptl-step.dn  .ptl-lbl { color:var(--okd); }
 .ptl-step.cur .ptl-lbl { color:var(--p); }
 
@@ -673,10 +693,15 @@ body {
 }
 .stepper::-webkit-scrollbar { display:none; }
 
-/* R12: indicador de progreso textual para AT */
+/* R12: indicador de progreso textual — V19: visible para todos (no solo AT) */
 .step-progress-sr {
-  position: absolute; width: 1px; height: 1px;
-  overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap;
+  font-size: var(--t-xs);
+  font-weight: 700;
+  color: var(--dh);
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-left: auto;
+  padding-right: 4px;
 }
 
 .stp { display:flex; align-items:center; gap:0; flex-shrink:0; }
@@ -2030,7 +2055,9 @@ body {
   cursor: pointer;
   padding: 4px 0 0;
   font-family: var(--f);
-  min-height: 32px;
+  min-height: 44px; /* V19: corregido de 32px a 44px — mínimo táctil */
+  display: inline-flex;
+  align-items: center;
 }
 .reminder-default-active .rda-link:hover { color: var(--ok); }
 .reminder-default-active.off {
@@ -2346,6 +2373,11 @@ body {
 
 /* Ajustar el área de scroll para compensar el nav flotante */
 .scroll.pb {
+  padding-bottom: 110px;
+}
+/* V19: padding automático cuando la pantalla contiene un nav visible.
+   Evita depender de la clase manual .pb en cada pantalla. */
+.screen.on:has(.nav) > .scroll:not(.pb) {
   padding-bottom: 110px;
 }
 
@@ -3561,6 +3593,27 @@ body {
 <!-- R: Skip link para navegación por teclado -->
 <a href="#main-content" class="skip-link">Ir al contenido principal</a>
 
+<!-- V19: Diálogo de confirmación accesible — reemplaza confirm() nativo.
+     WCAG 4.1.3, role=alertdialog, aria-modal, manejo de foco. -->
+<div class="scrim" id="sc-confirm" role="alertdialog" aria-modal="true"
+  aria-labelledby="sc-confirm-ttl" aria-describedby="sc-confirm-body">
+  <div class="sheet" style="padding-bottom:24px;">
+    <div class="sh-handle" aria-hidden="true"></div>
+    <h2 class="sh-title" id="sc-confirm-ttl">¿Reemplazar el texto?</h2>
+    <p class="sh-body" id="sc-confirm-body" style="margin-bottom:20px;">
+      Tiene texto escrito en este campo. Si continúa, el texto actual será reemplazado por la plantilla seleccionada.
+    </p>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button class="btn btn-fill" id="sc-confirm-ok" onclick="confirmAction()">
+        Sí, usar esta plantilla
+      </button>
+      <button class="btn btn-ghost" onclick="csc('sc-confirm');confirmCancel()">
+        Cancelar, mantener mi texto
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- R14: Toast de guardado automático -->
 <div class="save-toast" id="save-toast" aria-live="polite" role="status">
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-save"/></svg>
@@ -4045,9 +4098,11 @@ body {
   </div>
 
   <div style="padding:14px 16px 20px;background:var(--sur);border-top:1px solid var(--bdr);position:sticky;bottom:0;">
-    <button class="btn btn-fill" id="regBtn" disabled onclick="doRegister()" aria-label="Crear mi cuenta">
+    <button class="btn btn-fill" id="regBtn" disabled onclick="doRegister()" aria-label="Crear mi cuenta" aria-describedby="regBtn-reason">
       Crear mi cuenta
     </button>
+    <!-- V19: razón de bloqueo para AT — WCAG 4.1.3 -->
+    <span id="regBtn-reason" class="btn-disabled-reason">Complete todos los campos requeridos para continuar</span>
   </div>
 </div>
 
@@ -4507,7 +4562,7 @@ body {
     aria-valuenow="1" aria-valuemin="1" aria-valuemax="5"
     aria-label="Progreso del formulario: Paso 1 de 5"
     aria-describedby="step-progress-sr">
-    <span id="step-progress-sr" class="step-progress-sr">Complete los 5 pasos para enviar su petición</span>
+    <span id="step-progress-sr" class="step-progress-sr" aria-live="polite">Paso 1 de 5</span>
     <div class="stp cur" id="ss1" tabindex="0" role="button" aria-label="Paso 1: Tipo de petición (actual)"><div class="stp-c">1</div><div class="stp-lbl">Tipo</div></div>
     <div class="stp-line" id="sl1" aria-hidden="true"></div>
     <div class="stp" id="ss2" tabindex="-1" role="button" aria-label="Paso 2: Entidad destinataria (pendiente)"><div class="stp-c">2</div><div class="stp-lbl">Entidad</div></div>
@@ -6419,6 +6474,9 @@ function gS(n) {
     stepper.setAttribute('aria-valuenow', n);
     stepper.setAttribute('aria-label', `Progreso del formulario: Paso ${n} de 5`);
   }
+  // V19: actualizar indicador de progreso visible
+  const progressSr = document.getElementById('step-progress-sr');
+  if (progressSr) progressSr.textContent = `Paso ${n} de 5`;
 
   // Recall banners
   const recall = {
@@ -6623,7 +6681,7 @@ function useTemplate(key) {
   const fta = document.getElementById('factsTA');
   if (fta && !fta.value && t.factHint) fta.placeholder = `Ej: ${t.factHint}. Cuente lo que pasó con sus propias palabras...`;
   gS(3);
-  snack(`Listo. Le dirigiremos su petición a ${t.entity || 'Petición de información'}`, 'ok', '✓');
+  snack(`Listo. Le dirigiremos su petición a ${t.entity || 'Petición de información'}`, 'ok');
 }
 
 /* ══ V8 — Modo Simple / Avanzado ══ */
@@ -7445,7 +7503,7 @@ function voiceStop() {
       target.setAttribute('aria-busy', 'false');
     }
   }
-  snack('Listo, ya tenemos lo que dijo', 'ok', '✓');
+  snack('Listo, ya tenemos lo que dijo', 'ok');
 }
 
 /* Compat con código existente del modo libre (paso 3, factsTA) */
@@ -7767,7 +7825,7 @@ function showSaveToast() {
 
 function saveDraft() {
   autoSave();
-  snack('Lo guardamos. Puede volver cuando quiera.', 'ok', '✓');
+  snack('Lo guardamos. Puede volver cuando quiera.', 'ok');
   // V11: "Seguir luego" lleva al inicio para que el usuario salga del wizard
   setTimeout(() => {
     D.wizardStarted = false;
@@ -7801,18 +7859,24 @@ function csc(id) {
   document.body.style.overflow = '';
 }
 
-/* ══ SNACKBAR — R8: icono + texto ══ */
+/* ══ SNACKBAR — V19: icono SVG automático por tipo, sin emoji ══ */
 function snack(msg, type='info', ico='') {
   const w = document.getElementById('snacks');
   const el = document.createElement('div');
   el.className = `snack ${type}`;
   el.setAttribute('role', type === 'err' ? 'alert' : 'status');
   el.setAttribute('aria-live', type === 'err' ? 'assertive' : 'polite');
-  if (ico) {
-    el.innerHTML = `<span class="snack-ico" aria-hidden="true">${ico}</span><span>${msg}</span>`;
-  } else {
-    el.textContent = msg;
-  }
+
+  // V19: icono SVG automático según tipo; se ignora el parámetro emoji heredado
+  const icons = {
+    ok:   `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-check"/></svg>`,
+    err:  `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-alert-triangle"/></svg>`,
+    warn: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-alert-triangle"/></svg>`,
+    info: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`
+  };
+  const svgIco = icons[type] || icons.info;
+  el.innerHTML = `<span class="snack-ico" aria-hidden="true">${svgIco}</span><span>${msg}</span>`;
+
   w.appendChild(el);
   const dur = {info:2800, ok:3200, warn:4500, err:5500};
   setTimeout(() => {
@@ -8301,7 +8365,7 @@ function doRegister() {
     D.dashMode = 'simple';
     go('s-dash');
     applyDashMode();
-    snack('Bienvenido. Lo acompañamos en cada petición.', 'ok', '🎉');
+    snack('Bienvenido. Lo acompañamos en cada petición.', 'ok');
   }, 1500);
 }
 
@@ -8378,25 +8442,52 @@ function toggleThirdParty() {
 }
 
 /* ══ B3: Plantillas de solicitud ══ */
-function applyTemplate(btn, text) {
-  const ta = document.getElementById('reqTA');
-  const existing = ta ? ta.value.trim() : '';
+/* V19: Callbacks del diálogo de confirmación de plantilla */
+let _confirmPendingBtn  = null;
+let _confirmPendingText = null;
 
-  if (existing && existing !== text) {
-    if (!confirm('¿Reemplazar su texto con esta plantilla?')) return;
+function confirmAction() {
+  csc('sc-confirm');
+  if (_confirmPendingBtn && _confirmPendingText !== null) {
+    _applyTemplateNow(_confirmPendingBtn, _confirmPendingText);
   }
+  _confirmPendingBtn = _confirmPendingText = null;
+}
+function confirmCancel() {
+  _confirmPendingBtn = _confirmPendingText = null;
+}
 
-  // Deselect all chips
+function _applyTemplateNow(btn, text) {
   document.querySelectorAll('.template-chip').forEach(c => c.classList.remove('sel'));
   btn.classList.add('sel');
-
+  const ta = document.getElementById('reqTA');
   if (ta) {
     ta.value = text;
     ta.focus();
     ta.selectionStart = ta.selectionEnd = ta.value.length;
     ckS4();
-    snack('Listo, ya puede ajustar el texto a su gusto', 'ok', '✓');
+    snack('Listo, ya puede ajustar el texto a su gusto', 'ok');
   }
+}
+
+function applyTemplate(btn, text) {
+  const ta = document.getElementById('reqTA');
+  const existing = ta ? ta.value.trim() : '';
+
+  if (existing && existing !== text) {
+    // V19: Modal accesible en lugar de confirm() nativo
+    _confirmPendingBtn  = btn;
+    _confirmPendingText = text;
+    osc('sc-confirm');
+    // Enfocar el botón de confirmación para flujo de teclado
+    setTimeout(() => {
+      const okBtn = document.getElementById('sc-confirm-ok');
+      if (okBtn) okBtn.focus();
+    }, 320);
+    return;
+  }
+
+  _applyTemplateNow(btn, text);
 }
 
 /* ══ B4: Biometría (simulada) ══ */
