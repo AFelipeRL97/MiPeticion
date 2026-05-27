@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+<!-- V17: bloqueo de orientación a portrait (la app solo funciona vertical) -->
+<meta name="screen-orientation" content="portrait">
+<meta name="x5-orientation" content="portrait">
 <title>MiPeticion</title>
 <meta name="color-scheme" content="light dark">
 
@@ -37,6 +40,14 @@
     document.documentElement.setAttribute('data-theme', 'light');
     window.__themePreference = 'system';
   }
+
+  // V17: Bloquear orientación a portrait. La app solo se diseñó para vertical.
+  // El API Screen Orientation requiere fullscreen en algunos navegadores; si falla, el CSS también bloquea.
+  try {
+    if (screen.orientation && typeof screen.orientation.lock === 'function') {
+      screen.orientation.lock('portrait').catch(function() { /* navegador no permite; OK, CSS compensa */ });
+    }
+  } catch (e) { /* sin soporte de API */ }
 })();
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -526,7 +537,16 @@ body {
 }
 .ob-vis::before { content:''; position:absolute; width:200px; height:200px; border-radius:50%; background:rgba(9,73,129,.06); top:-60px; right:-50px; }
 .ob-vis::after  { content:''; position:absolute; width:140px; height:140px; border-radius:50%; background:rgba(9,73,129,.06); bottom:-40px; left:-30px; }
-.ob-ico { font-size: 80px; z-index:1; animation: bob 2.8s ease-in-out infinite; }
+.ob-ico {
+  width: 120px;
+  height: 120px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  animation: bob 2.8s ease-in-out infinite;
+}
+.ob-ico svg { display: block; width: 120px; height: 120px; }
 @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
 .ob-dots { display:flex; gap:6px; justify-content:center; padding: 18px 0 0; }
 .ob-dot { height: 5px; flex:1; max-width:36px; border-radius:var(--rmax); background:var(--bdr); transition: all .3s; }
@@ -889,7 +909,7 @@ body {
 .tts-ico { width:var(--tap); height:var(--tap); border-radius:50%; background:var(--okl); display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
 .tts-ttl { font-size:var(--t-base); font-weight:800; color:var(--d); }
 .tts-sub { font-size:var(--t-xs); color:var(--dh); }
-.rv-fields { padding:14px 16px 130px; display:flex; flex-direction:column; gap:10px; }
+.rv-fields { padding:14px 16px calc(260px + env(safe-area-inset-bottom, 0px)); display:flex; flex-direction:column; gap:10px; }
 .rv-field { background:var(--sur); border-radius:var(--r12); border:1px solid var(--bdr); overflow:hidden; }
 .rv-lbl { display:flex; align-items:center; justify-content:space-between; padding:9px 14px; background:var(--n); border-bottom:1px solid var(--bdr); }
 /* R2: label de revisión */
@@ -1010,12 +1030,16 @@ body {
   color: var(--dm);
   text-transform: uppercase;
   letter-spacing: .05em;
-  padding: 10px 0 8px;
+  padding: 10px 4px 8px;  /* V18: padding lateral para que el ícono no toque el borde */
   border-bottom: 1px solid var(--bdr);
   margin-bottom: 16px;
   display: flex;
   align-items: center;
   gap: 8px;
+}
+.data-section-header > svg {
+  flex-shrink: 0;  /* V18: evita que el SVG se comprima */
+  display: block;
 }
 
 /* ══ A4: Dashboard stats mejoradas ══ */
@@ -3123,9 +3147,415 @@ body {
     0 2px 6px rgba(0,0,0,.25);
 }
 
+/* ════════════════════════════════════════════════════════════════
+   V16 GREEN — ACCESSIBILITY: PREFERS-REDUCED-MOTION
+   Respeta la preferencia del usuario por animaciones reducidas.
+   Beneficios: accesibilidad WCAG 2.1 AAA (criterio 2.3.3), ahorro
+   de energía GPU, evita mareos en usuarios con desórdenes vestibulares.
+   Mantiene transiciones funcionales mínimas (0.01ms = instantáneo).
+   ════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   V17 — RESPONSIVE: TABLETS Y ORIENTACIÓN
+   ════════════════════════════════════════════════════════════════ */
+
+/* En tablets y desktop, el frame de 430px se centra con generoso espacio a los lados.
+   Esto permite a la app verse cómoda en iPad, Galaxy Tab, etc. sin estirarse
+   ni perder la proporción de teléfono móvil para la que está diseñada. */
+@media (min-width: 600px) {
+  body {
+    padding: 24px 0;
+    background: linear-gradient(135deg, #C9D3DC 0%, #E8EDF1 50%, #C9D3DC 100%);
+  }
+  [data-theme="dark"] body {
+    background: linear-gradient(135deg, #050810 0%, #0E1623 50%, #050810 100%);
+  }
+  #app {
+    min-height: calc(100vh - 48px);
+    /* V18: sin border-radius — los bordes redondeados causaban
+       inconsistencias visuales en algunos dispositivos móviles */
+    overflow: hidden;
+    box-shadow:
+      0 24px 80px rgba(15,31,51,.22),
+      0 8px 24px rgba(15,31,51,.10);
+  }
+  [data-theme="dark"] #app {
+    box-shadow:
+      0 24px 80px rgba(0,0,0,.55),
+      0 8px 24px rgba(0,0,0,.35);
+  }
+}
+
+/* En tablets aún más grandes, ampliamos un poco el frame para aprovechar mejor el espacio */
+@media (min-width: 900px) {
+  #app {
+    max-width: 480px;
+  }
+}
+
+/* Bloqueo de orientación: si el dispositivo se rota a landscape,
+   mostramos un overlay invitando a girar el dispositivo */
+@media (orientation: landscape) and (max-width: 932px) and (max-height: 500px) {
+  #app { display: none !important; }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: var(--bg-canvas, #F4F6F8);
+    z-index: 9999;
+  }
+  body::after {
+    content: '↻  Por favor, gire el dispositivo para usar Mi Petición.';
+    position: fixed; inset: 0;
+    z-index: 10000;
+    display: flex; align-items: center; justify-content: center;
+    text-align: center;
+    padding: 24px;
+    font-family: var(--f);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--d, #0F1F33);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   V17 — ANTI-HOVER EN DISPOSITIVOS TÁCTILES
+   La app es móvil. Los efectos :hover no aplican a tap — pero algunos
+   navegadores móviles los disparan al tocar, dejando estados pegados.
+   Restringimos los efectos hover a dispositivos con puntero fino real.
+   ════════════════════════════════════════════════════════════════ */
+@media (hover: none) {
+  /* En dispositivos sin hover (móviles, tablets), neutralizamos TODOS los :hover.
+     Las animaciones quedan solo en :active (al hacer tap). */
+  *:hover {
+    background-color: revert !important;
+    color: revert !important;
+    border-color: revert !important;
+    box-shadow: revert !important;
+    transform: revert !important;
+    opacity: revert !important;
+  }
+  /* Algunas reglas son demasiado específicas; las anulamos por nombre */
+  .btn-fill:hover,
+  .btn-soft:hover,
+  .btn-ghost:hover,
+  .btn-danger:hover,
+  .btn-lnk:hover,
+  .fab:hover,
+  .help-fab:hover,
+  .pc:hover,
+  .tpl-card:hover,
+  .dt-stat:hover,
+  .simple-header-btn:hover,
+  .simple-header-btn.on-dark:hover,
+  .bar-logout-btn:hover,
+  .alert-banner-close:hover,
+  .theme-toggle-btn:hover,
+  .dash-mode-pill:hover,
+  .chip:hover,
+  .nav-tab:hover,
+  .reminder-default-active .rda-link:hover,
+  .hlp-item:hover,
+  .dt-avatar:hover,
+  .case-doc-action:hover,
+  .success-action-card:hover,
+  .success-copy-btn:hover,
+  .success-back-btn:hover {
+    transform: none !important;
+    box-shadow: inherit;
+  }
+}
+
+/* En dispositivos con hover real (mouse), preservamos los efectos de hover originales.
+   Los selectores :hover existentes en el CSS siguen funcionando, pero los envolvemos:
+   abajo añadimos protección para que :active siempre tenga prioridad visual. */
+@media (hover: hover) {
+  /* No hacemos nada — los :hover originales se mantienen */
+}
+
+/* ════════════════════════════════════════════════════════════════
+   V17 — FEEDBACK TÁCTIL: :active visible en todos los botones
+   Asegura que el usuario móvil siempre vea respuesta al tap.
+   ════════════════════════════════════════════════════════════════ */
+.btn-fill:active,
+.btn-soft:active,
+.btn-ghost:active,
+.btn-danger:active {
+  transform: scale(0.97);
+  transition: transform .08s ease-out;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   V17 — PASO 3 EN SUB-VISTAS
+   Cada pregunta + evidencia es su propia "sub-vista". Solo una visible
+   a la vez. Barra de progreso muestra cuántas preguntas se han contestado.
+   ════════════════════════════════════════════════════════════════ */
+
+/* Barra de progreso del paso 3 */
+.fp3-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 20px;
+}
+.fp3-progress-track {
+  flex: 1;
+  display: flex;
+  gap: 6px;
+}
+.fp3-progress-seg {
+  flex: 1;
+  height: 6px;
+  border-radius: 4px;
+  background: var(--bdr);
+  transition: background-color .25s ease;
+}
+.fp3-progress-seg.done   { background: var(--ok); }
+.fp3-progress-seg.active { background: var(--p); }
+.fp3-progress-lbl {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--dm);
+  white-space: nowrap;
+  letter-spacing: .02em;
+}
+
+/* Sub-pasos */
+.fp3-substep {
+  display: none;
+  animation: fadeSlide .2s ease-out both;
+}
+.fp3-substep.active { display: block; }
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Navegación interna entre sub-pasos */
+.fp3-sub-nav {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+.fp3-sub-nav .btn { flex: 1; min-width: 140px; }
+.fp3-sub-nav .btn-skip {
+  background: transparent;
+  border: 1.5px dashed var(--bdr);
+  color: var(--dm);
+  font-weight: 700;
+}
+.fp3-sub-nav .btn-skip:hover { color: var(--d); border-color: var(--dm); }
+
+/* Título del sub-paso */
+.fp3-sub-q {
+  font-size: var(--t-lg);
+  font-weight: 800;
+  color: var(--d);
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+.fp3-sub-hint {
+  font-size: var(--t-sm);
+  color: var(--dm);
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+
+/* En modo oscuro, los segmentos vacíos */
+[data-theme="dark"] .fp3-progress-seg { background: var(--bdr); }
+
+/* ════════════════════════════════════════════════════════════════
+   V18 — BOTÓN DE DICTADO ESTILO WHATSAPP (paso 3)
+   Variante .mic-btn-lg: botón circular grande, prominente,
+   con halo y efecto pulse al grabar. Cumple touch target ≥48px.
+   ════════════════════════════════════════════════════════════════ */
+.mic-btn-lg {
+  /* Container circular grande */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--p);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  margin: 0 auto;
+  /* No transición en hover; solo en active y rec */
+  transition: transform .12s ease-out, box-shadow .15s ease-out, background .15s ease-out;
+  box-shadow:
+    0 4px 14px rgba(9, 73, 129, 0.32),
+    0 1px 3px rgba(9, 73, 129, 0.18);
+  -webkit-tap-highlight-color: transparent;
+  flex-direction: column;
+  gap: 0;
+}
+.mic-btn-lg svg.mic-ico {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+.mic-btn-lg .mic-lbl {
+  /* En la variante grande, el texto va en línea separada debajo del botón */
+  display: none;
+}
+.mic-btn-lg:active {
+  transform: scale(0.94);
+  box-shadow:
+    0 2px 6px rgba(9, 73, 129, 0.28);
+}
+.mic-btn-lg:focus-visible {
+  outline: 3px solid var(--p);
+  outline-offset: 4px;
+}
+
+/* Estado grabando: cambio de color a rojo + halo pulsante + ícono detener */
+.mic-btn-lg.rec {
+  background: var(--err);
+  box-shadow:
+    0 4px 14px rgba(244, 67, 54, 0.42),
+    0 1px 3px rgba(244, 67, 54, 0.18);
+}
+.mic-btn-lg.rec::before {
+  /* Anillo pulsante */
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 3px solid rgba(244, 67, 54, 0.45);
+  animation: micPulse 1.4s ease-out infinite;
+  pointer-events: none;
+}
+@keyframes micPulse {
+  0%   { transform: scale(0.95); opacity: 1; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+
+/* Texto de instrucción debajo del botón */
+.mic-btn-lg-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin: 20px auto 0;
+}
+.mic-btn-lg-hint {
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--dm);
+  text-align: center;
+}
+.mic-btn-lg.rec + .mic-btn-lg-hint,
+.mic-btn-lg-wrap:has(.mic-btn-lg.rec) .mic-btn-lg-hint {
+  color: var(--err);
+  font-weight: 700;
+}
+
+/* Contador de caracteres pegado al textarea (no compite con el botón grande) */
+.wa-char-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   V18 — NAV DEL PASO 3: Continuar arriba y centrado, Atrás abajo
+   Layout vertical, ambos botones full-width centrados.
+   ════════════════════════════════════════════════════════════════ */
+.fp3-sub-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 28px;
+  align-items: stretch;
+}
+.fp3-sub-nav .btn {
+  /* Cada botón ocupa ancho completo, centrado */
+  width: 100%;
+  min-height: 52px;
+  justify-content: center;
+}
+/* El Atrás se muestra como link sutil debajo, no como botón soft completo */
+.fp3-sub-nav .btn-back {
+  background: transparent;
+  border: none;
+  color: var(--dm);
+  font-weight: 600;
+  font-size: var(--t-sm);
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 4px;
+  padding: 10px 16px;
+  min-height: 44px;  /* mantiene touch target ≥44 */
+  transition: color .15s, text-decoration-color .15s;
+}
+.fp3-sub-nav .btn-back:active {
+  color: var(--d);
+  text-decoration-color: var(--dm);
+}
+.fp3-sub-nav .btn-back:focus-visible {
+  outline: 2px solid var(--p);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* Botón "Omitir" no debe resaltar (V18: ajuste 3) */
+.fp3-sub-nav .btn-skip {
+  background: transparent;
+  border: none;
+  color: var(--dh);
+  font-weight: 500;
+  font-size: var(--t-sm);
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 4px;
+  padding: 10px 16px;
+  min-height: 44px;
+  transition: color .15s, text-decoration-color .15s;
+  font-style: italic;
+}
+.fp3-sub-nav .btn-skip:active {
+  color: var(--dm);
+  text-decoration-color: var(--dh);
+}
+
 </style>
 </head>
 <body>
+
+<!-- v16 GREEN: SVG sprite — define los 15 iconos más usados una sola vez.
+     Ahorra ~28KB de markup duplicado y reduce el tiempo de parseo del DOM. -->
+<svg width="0" height="0" style="position:absolute;overflow:hidden;" aria-hidden="true">
+  <defs>
+    <symbol id="i-lock-closed" viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+    <symbol id="i-save" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></symbol>
+    <symbol id="i-help-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+    <symbol id="i-file-text" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></symbol>
+    <symbol id="i-alert-triangle" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></symbol>
+    <symbol id="i-message-circle" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 2.07 4.18 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72A12.84 12.84 0 0 0 9.81 7.4a2 2 0 0 1-.45 2.11L8.09 10.78a16 16 0 0 0 6.13 6.13l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 3.68.74A2 2 0 0 1 22 16.92z"/></symbol>
+  </defs>
+</svg>
 <div id="app">
 
 <!-- R: Skip link para navegación por teclado -->
@@ -3133,7 +3563,7 @@ body {
 
 <!-- R14: Toast de guardado automático -->
 <div class="save-toast" id="save-toast" aria-live="polite" role="status">
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-save"/></svg>
   Borrador guardado
 </div>
 
@@ -3143,7 +3573,7 @@ body {
 <div class="scrim" id="sc-esc" role="dialog" aria-modal="true" aria-labelledby="sc-esc-ttl" onclick="if(event.target.classList.contains('scrim'))csc('sc-esc')">
   <div class="sheet">
     <div class="sh-handle" aria-hidden="true"></div>
-    <h2 class="sh-title" id="sc-esc-ttl">⚖️ Si no le respondieron, esto puede hacer</h2>
+    <h2 class="sh-title" id="sc-esc-ttl">Si no le respondieron, esto puede hacer</h2>
     <p class="sh-body">Si la entidad no cumplió el plazo, tiene 3 caminos. Cualquiera es gratis.</p>
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px;">
       <div style="background:var(--n);border-radius:var(--r12);padding:14px;display:flex;gap:12px;">
@@ -3166,15 +3596,80 @@ body {
 <div class="scrim" id="sc-types" role="dialog" aria-modal="true" aria-labelledby="sc-types-ttl" onclick="if(event.target.classList.contains('scrim'))csc('sc-types')">
   <div class="sheet">
     <div class="sh-handle" aria-hidden="true"></div>
-    <h2 class="sh-title" id="sc-types-ttl">📚 Los 4 tipos de petición</h2>
-    <p class="sh-body">Cada uno tiene un plazo diferente. Esto le da una idea de cuándo esperar respuesta:</p>
-    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px;">
-      <div style="background:var(--pl);border-radius:var(--r12);padding:12px 14px;"><div style="font-size:var(--t-sm);font-weight:800;color:var(--p);">Pedir información o documentos <span style="font-size:11px;font-weight:600;color:var(--dm);"> → 10 días</span></div><div style="font-size:var(--t-sm);color:var(--ds);margin-top:3px;">Una copia, un certificado, datos que tiene la entidad.</div></div>
-      <div style="background:var(--n);border-radius:var(--r12);padding:12px 14px;"><div style="font-size:var(--t-sm);font-weight:800;color:var(--d);">Algo personal suyo <span style="font-size:11px;font-weight:600;color:var(--dm);"> → 15 días</span></div><div style="font-size:var(--t-sm);color:var(--dm);margin-top:3px;">Su cita médica, su pensión, un trámite que no avanza.</div></div>
-      <div style="background:var(--n);border-radius:var(--r12);padding:12px 14px;"><div style="font-size:var(--t-sm);font-weight:800;color:var(--d);">Algo que afecta al barrio <span style="font-size:11px;font-weight:600;color:var(--dm);"> → 15 días</span></div><div style="font-size:var(--t-sm);color:var(--dm);margin-top:3px;">Lo que beneficia a más personas: calles, alumbrado, parques.</div></div>
-      <div style="background:var(--n);border-radius:var(--r12);padding:12px 14px;"><div style="font-size:var(--t-sm);font-weight:800;color:var(--d);">Una pregunta sobre una norma <span style="font-size:11px;font-weight:600;color:var(--dm);"> → 30 días</span></div><div style="font-size:var(--t-sm);color:var(--dm);margin-top:3px;">Cómo se interpreta una ley o procedimiento en su caso.</div></div>
+    <h2 class="sh-title" id="sc-types-ttl">¿Qué es el Derecho de Petición?</h2>
+    <p class="sh-body" style="margin-bottom:14px;">
+      Es la herramienta que la Constitución de Colombia le da a usted (y a cualquier ciudadano)
+      para <strong>pedirle algo formal a una entidad pública o privada que preste servicios al Estado</strong>:
+      información, una respuesta, un documento, una solución. No necesita abogado.
+    </p>
+    <div style="background:var(--pl);border-radius:var(--r12);padding:12px 14px;margin-bottom:10px;">
+      <div style="font-size:var(--t-sm);font-weight:800;color:var(--p);margin-bottom:4px;">¿Quiénes están obligadas a responder?</div>
+      <div style="font-size:var(--t-sm);color:var(--ds);line-height:1.5;">
+        Cualquier entidad pública (EPS, alcaldías, ministerios, Colpensiones, hospitales)
+        y empresas privadas que prestan un servicio público (servicios públicos, transporte).
+      </div>
     </div>
-    <button class="btn btn-fill" onclick="csc('sc-types')">Cerrar</button>
+    <div style="background:var(--okl);border-radius:var(--r12);padding:12px 14px;margin-bottom:10px;">
+      <div style="font-size:var(--t-sm);font-weight:800;color:var(--okd);margin-bottom:4px;">¿En qué casos típicos sirve?</div>
+      <div style="font-size:var(--t-sm);color:var(--ds);line-height:1.5;">
+        Una cita médica que no le asignan, una pensión que no avanza, un cobro mal hecho,
+        un documento que no le entregan, un trámite estancado, una calle sin alumbrado.
+      </div>
+    </div>
+    <div style="background:var(--n);border-radius:var(--r12);padding:12px 14px;margin-bottom:18px;border:1px solid var(--bdr);">
+      <div style="font-size:var(--t-sm);font-weight:800;color:var(--d);margin-bottom:4px;">El respaldo legal</div>
+      <div style="font-size:var(--t-sm);color:var(--dm);line-height:1.5;">
+        Está consagrado en el <strong>artículo 23 de la Constitución</strong> y reglamentado por la
+        <strong>Ley 1755 de 2015</strong>. Por ley, la entidad <em>tiene que responderle</em>.
+      </div>
+    </div>
+    <button class="btn btn-fill" onclick="csc('sc-types')">Entendido</button>
+  </div>
+</div>
+
+<!-- V17: Nuevo sheet — específico para tiempos de respuesta -->
+<div class="scrim" id="sc-deadlines" role="dialog" aria-modal="true" aria-labelledby="sc-deadlines-ttl" onclick="if(event.target.classList.contains('scrim'))csc('sc-deadlines')">
+  <div class="sheet">
+    <div class="sh-handle" aria-hidden="true"></div>
+    <h2 class="sh-title" id="sc-deadlines-ttl">¿Cuánto se demoran en responder?</h2>
+    <p class="sh-body">Depende del tipo de petición. La ley les fija un plazo máximo que <strong>tienen que cumplir</strong>:</p>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px;">
+      <div style="background:var(--pl);border-radius:var(--r12);padding:12px 14px;">
+        <div style="font-size:var(--t-sm);font-weight:800;color:var(--p);">
+          Pedir información o documentos
+          <span style="font-size:13px;font-weight:800;color:var(--p);float:right;">10 días hábiles</span>
+        </div>
+        <div style="font-size:var(--t-sm);color:var(--ds);margin-top:3px;clear:both;">Una copia, un certificado, datos que tiene la entidad.</div>
+      </div>
+      <div style="background:var(--n);border-radius:var(--r12);padding:12px 14px;border:1px solid var(--bdr);">
+        <div style="font-size:var(--t-sm);font-weight:800;color:var(--d);">
+          Algo personal suyo
+          <span style="font-size:13px;font-weight:800;color:var(--d);float:right;">15 días hábiles</span>
+        </div>
+        <div style="font-size:var(--t-sm);color:var(--dm);margin-top:3px;clear:both;">Su cita médica, su pensión, un trámite que no avanza.</div>
+      </div>
+      <div style="background:var(--n);border-radius:var(--r12);padding:12px 14px;border:1px solid var(--bdr);">
+        <div style="font-size:var(--t-sm);font-weight:800;color:var(--d);">
+          Algo que afecta al barrio
+          <span style="font-size:13px;font-weight:800;color:var(--d);float:right;">15 días hábiles</span>
+        </div>
+        <div style="font-size:var(--t-sm);color:var(--dm);margin-top:3px;clear:both;">Calles, alumbrado, parques. Beneficia a más personas.</div>
+      </div>
+      <div style="background:var(--n);border-radius:var(--r12);padding:12px 14px;border:1px solid var(--bdr);">
+        <div style="font-size:var(--t-sm);font-weight:800;color:var(--d);">
+          Una pregunta sobre una norma
+          <span style="font-size:13px;font-weight:800;color:var(--d);float:right;">30 días hábiles</span>
+        </div>
+        <div style="font-size:var(--t-sm);color:var(--dm);margin-top:3px;clear:both;">Cómo se interpreta una ley o procedimiento en su caso.</div>
+      </div>
+    </div>
+    <div style="background:var(--wrnl);border-left:3px solid var(--wrn);border-radius:var(--r8);padding:10px 12px;margin-bottom:14px;">
+      <div style="font-size:var(--t-sm);color:var(--d);line-height:1.5;">
+        <strong>¿No le respondieron a tiempo?</strong> Eso ya es ilegal. Le decimos cómo escalar — incluso preparamos su tutela en minutos.
+      </div>
+    </div>
+    <p style="font-size:11px;color:var(--dh);text-align:center;margin-bottom:14px;">Los días hábiles excluyen sábados, domingos y festivos colombianos.</p>
+    <button class="btn btn-fill" onclick="csc('sc-deadlines')">Entendido</button>
   </div>
 </div>
 
@@ -3184,7 +3679,7 @@ body {
     <h2 class="sh-title" id="sc-exit-ttl">¿Quiere salir?</h2>
     <p class="sh-body">Tranquilo: lo que ya escribió queda guardado. Puede volver cuando quiera.</p>
     <div style="display:flex;flex-direction:column;gap:10px;">
-      <button class="btn btn-soft" onclick="saveDraftExit()">💾 Guardar y salir</button>
+      <button class="btn btn-soft" onclick="saveDraftExit()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:middle;margin-right:6px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Guardar y salir</button>
       <button class="btn btn-danger" onclick="exitNoSave()">Salir sin guardar</button>
       <button class="btn btn-fill" onclick="csc('sc-exit')">Mejor sigo aquí</button>
     </div>
@@ -3212,7 +3707,7 @@ body {
     <p class="sh-body">Lo atiende una persona real. Le puede ayudar a entender qué pedir, cómo decirlo o qué hacer si no le responden. Sin costo.</p>
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
       <button class="btn btn-fill" onclick="csc('sc-help-human');contactWhatsApp()" style="background:#25D366;border:none;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-message-circle"/></svg>
         Escribirnos por WhatsApp
       </button>
       <button class="btn btn-soft" onclick="csc('sc-help-human');contactCall()">
@@ -3240,7 +3735,7 @@ body {
     <div class="account-menu" role="menu">
       <button class="account-menu-item" role="menuitem" onclick="csc('sc-account'); go('s-help')">
         <span class="account-menu-ico">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-help-circle"/></svg>
         </span>
         <span class="account-menu-body">
           <span class="account-menu-ttl">Ayuda y guía legal</span>
@@ -3262,7 +3757,7 @@ body {
 
       <button class="account-menu-item account-menu-item--danger" role="menuitem" onclick="confirmLogout()">
         <span class="account-menu-ico" style="color:var(--err); background:var(--errl);">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-logout"/></svg>
         </span>
         <span class="account-menu-body">
           <span class="account-menu-ttl" style="color:var(--err);">Cerrar sesión</span>
@@ -3315,7 +3810,7 @@ body {
     <!-- V10-7: Badge de seguridad legal destacado (Zero-Risk Bias + Authority Bias) -->
     <div class="security-badge" role="note" aria-label="Aviso de protección de datos">
       <div class="security-badge-ico" aria-hidden="true">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-shield"/></svg>
       </div>
       <div class="security-badge-txt">
         Sus datos están protegidos por la <b>Ley 1581 (Habeas Data)</b>. Solo los usamos para tramitar sus peticiones.
@@ -3377,7 +3872,7 @@ body {
     <div style="text-align:center; padding-top: 4px;">
       <button
         class="btn-lnk"
-        onclick="obFromRegister=true; D.ob=0; const s=OBS[0]; document.getElementById('ob-ico').textContent=s.ico; document.getElementById('ob-tag').textContent=s.tag; document.getElementById('ob-ttl').textContent=s.ttl; document.getElementById('ob-txt').innerHTML=s.txt; document.getElementById('ob-note').innerHTML=s.note; document.querySelectorAll('.ob-dot').forEach((d,i)=>{d.classList.toggle('on',i===0);d.setAttribute('aria-selected',i===0?'true':'false')}); document.getElementById('ob-btn').textContent='Continuar'; document.getElementById('ob-btn').onclick=obNext; go('s-ob');"
+        onclick="obFromRegister=true; D.ob=0; const s=OBS[0]; document.getElementById('ob-ico').innerHTML=s.ico; document.getElementById('ob-tag').textContent=s.tag; document.getElementById('ob-ttl').textContent=s.ttl; document.getElementById('ob-txt').innerHTML=s.txt; document.getElementById('ob-note').innerHTML=s.note; document.querySelectorAll('.ob-dot').forEach((d,i)=>{d.classList.toggle('on',i===0);d.setAttribute('aria-selected',i===0?'true':'false')}); document.getElementById('ob-btn').textContent='Continuar'; document.getElementById('ob-btn').onclick=obNext; go('s-ob');"
         style="font-size: var(--t-sm); font-weight: 600;">
         Crear mi cuenta →
       </button>
@@ -3390,17 +3885,17 @@ body {
      PANTALLA 2: ONBOARDING
 ═══════════════════════════════════════ -->
 <div id="s-ob" class="screen" aria-label="Introducción">
-  <div class="ob-vis" aria-hidden="true"><span class="ob-ico" id="ob-ico">🙋</span></div>
+  <div class="ob-vis" aria-hidden="true"><span class="ob-ico" id="ob-ico"></span></div>
   <div class="ob-dots" role="tablist" aria-label="Paso de introducción" id="ob-dots">
     <div class="ob-dot on" role="tab" aria-selected="true"  aria-label="Paso 1 de 3"></div>
     <div class="ob-dot"    role="tab" aria-selected="false" aria-label="Paso 2 de 3"></div>
     <div class="ob-dot"    role="tab" aria-selected="false" aria-label="Paso 3 de 3"></div>
   </div>
   <div class="ob-body">
-    <div class="ob-tag" id="ob-tag" aria-hidden="true">📖 Su derecho</div>
+    <div class="ob-tag" id="ob-tag" aria-hidden="true">Su derecho</div>
     <h2 class="ob-ttl" id="ob-ttl">Le explicamos en un minuto</h2>
     <p  class="ob-txt" id="ob-txt">El Derecho de Petición es la herramienta gratuita que la Constitución le da para pedirle algo a cualquier entidad pública: información, una solución o una explicación. <strong>No necesita abogado.</strong></p>
-    <div class="ob-note" id="ob-note">⏱️ Por ley, la entidad debe responderle en <strong>máximo 15 días hábiles</strong>.</div>
+    <div class="ob-note" id="ob-note">Por ley, la entidad debe responderle en <strong>máximo 15 días hábiles</strong>.</div>
   </div>
   <div class="ob-acts">
     <button class="btn btn-fill" id="ob-btn" onclick="obNext()">Continuar</button>
@@ -3543,7 +4038,7 @@ body {
       </div>
 
       <p style="font-size:var(--t-xs);color:var(--dh);text-align:center;margin-bottom:20px;line-height:1.6;" role="note">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px;" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px;" aria-hidden="true"><use href="#i-shield"/></svg>
         Sus datos están protegidos por la Ley 1581 (Habeas Data)
       </p>
     </div>
@@ -3569,11 +4064,11 @@ body {
     <!-- V14: Header con notificaciones y logout -->
     <div class="simple-header">
       <button class="simple-header-btn" onclick="openNotifications()" aria-label="Notificaciones: tiene 1 plazo por vencer">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-bell"/></svg>
         <span class="simple-header-badge" aria-hidden="true">1</span>
       </button>
       <button class="simple-header-btn" onclick="confirmLogout()" aria-label="Cerrar sesión">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-logout"/></svg>
       </button>
     </div>
 
@@ -3584,7 +4079,7 @@ body {
 
     <button class="simple-btn" onclick="go('s-form')" aria-label="Crear una nueva petición, lo guiamos paso a paso">
       <span class="simple-btn-ico" aria-hidden="true">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-plus"/></svg>
       </span>
       <span class="simple-btn-ttl">Crear una petición</span>
       <span class="simple-btn-sub">Lo acompañamos paso a paso</span>
@@ -3592,7 +4087,7 @@ body {
 
     <button class="simple-btn alt" onclick="nPet()" aria-label="Ver mis peticiones y cómo van mis trámites">
       <span class="simple-btn-ico" aria-hidden="true">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-file-text"/></svg>
       </span>
       <span class="simple-btn-ttl">Mis peticiones</span>
       <span class="simple-btn-sub">Vea cómo van sus trámites</span>
@@ -3614,11 +4109,11 @@ body {
            igual posición que en la vista simple -->
       <div class="simple-header on-hero">
         <button class="simple-header-btn on-dark" onclick="openNotifications()" aria-label="Notificaciones: tiene 1 plazo por vencer">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-bell"/></svg>
           <span class="simple-header-badge" aria-hidden="true">1</span>
         </button>
         <button class="simple-header-btn on-dark" onclick="confirmLogout()" aria-label="Cerrar sesión">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-logout"/></svg>
         </button>
       </div>
 
@@ -3627,7 +4122,7 @@ body {
           <p class="dt-greet">Qué bueno verle,</p>
           <h1 class="dt-name" id="dt-name-display">Carlos Eduardo</h1>
           <button class="dash-mode-pill" onclick="toggleDashMode()" aria-label="Cambiar al modo simple">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-clock"/></svg>
             Vista detallada · cambiar
           </button>
         </div>
@@ -3651,7 +4146,7 @@ body {
         </button>
         <div class="ab-row">
           <div class="ab-dot" aria-hidden="true"></div>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--err)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--err)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-alert-triangle"/></svg>
           <div class="ab-ttl">A su petición de pensión le quedan 7 días</div>
         </div>
         <p class="ab-body">Colpensiones aún no le responde. Si llega el día <strong>14 de mayo</strong> sin respuesta, le mostramos qué hacer.</p>
@@ -3691,7 +4186,7 @@ body {
           aria-label="Retomar el borrador que dejó sin enviar">
           <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
             <div style="width:36px;height:36px;border-radius:var(--r8);background:var(--wrnl);display:flex;align-items:center;justify-content:center;">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--wrn)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--wrn)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-save"/></svg>
             </div>
             <span class="chip chip-wrn" style="font-size:10px;padding:2px 8px;min-height:auto;"><span class="chip-dot" aria-hidden="true"></span>Sin enviar</span>
           </div>
@@ -3719,7 +4214,7 @@ body {
           style="background:var(--sur);border:1.5px solid var(--bdr);border-radius:var(--r16);padding:16px 14px;text-align:left;cursor:pointer;min-height:104px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:var(--sh1);-webkit-tap-highlight-color:transparent;"
           aria-label="Hablar con un asesor por WhatsApp o por teléfono">
           <div style="width:36px;height:36px;border-radius:var(--r8);background:var(--okl);display:flex;align-items:center;justify-content:center;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--okd)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--okd)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-message-circle"/></svg>
           </div>
           <div>
             <div style="font-size:var(--t-sm);font-weight:800;color:var(--d);line-height:1.3;">Necesito ayuda</div>
@@ -3758,14 +4253,14 @@ body {
             <h3 class="pc-name">Petición de Pensión</h3>
             <span class="chip chip-wrn">
               <span class="chip-dot" aria-hidden="true"></span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-clock"/></svg>
               En proceso
             </span>
           </div>
           <p class="pc-ent">Colpensiones — Estado de reconocimiento</p>
           <p class="pc-meta">4 feb, 2026
             <span class="pc-exp" style="display:inline-flex;align-items:center;gap:4px;">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-alert-triangle"/></svg>
               Le quedan 7 días
             </span>
           </p>
@@ -3805,7 +4300,7 @@ body {
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
     <div class="biometric-ico" aria-hidden="true">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--p)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--p)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-shield"/></svg>
     </div>
     <div class="biometric-ttl">¿Quiere entrar más rápido?</div>
     <div class="biometric-sub">Use su huella o Face ID y no tendrá que escribir la contraseña la próxima vez.</div>
@@ -3817,7 +4312,7 @@ body {
 
   <!-- V12: FAB Nueva petición - solo icono +, oculto en modo simple -->
   <button class="fab fab-advanced-only" id="fab-dash" onclick="go('s-form')" aria-label="Crear nueva petición">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-plus"/></svg>
   </button>
 
   <nav class="nav" role="navigation" aria-label="Menú principal">
@@ -3830,7 +4325,7 @@ body {
     <button class="nav-tab" onclick="nPet()" aria-label="Mis peticiones, 1 alerta">
       <div class="nav-ic-w">
         <div class="nav-dot" aria-hidden="true">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-file-text"/></svg>
         </div>
         <span class="nav-badge" aria-label="1 alerta">1</span>
       </div>
@@ -3838,7 +4333,7 @@ body {
     </button>
     <button class="nav-tab" onclick="nTo(this,'s-help')" aria-label="Ayuda y recursos">
       <div class="nav-dot" aria-hidden="true">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-help-circle"/></svg>
       </div>
       <span class="nav-lbl">Ayuda</span>
     </button>
@@ -3878,7 +4373,7 @@ body {
             <h3 class="pc-name">Petición de Salud</h3>
             <span class="chip chip-ok">
               <span class="chip-dot" aria-hidden="true"></span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-check"/></svg>
               Ya respondieron
             </span>
           </div>
@@ -3903,14 +4398,14 @@ body {
             <span class="chip chip-wrn">
               <span class="chip-dot" aria-hidden="true"></span>
               <!-- V11: SVG de reloj para el estado "En proceso" -->
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-clock"/></svg>
               En proceso
             </span>
           </div>
           <p class="pc-ent">Colpensiones — Estado de reconocimiento</p>
           <p class="pc-meta">4 feb, 2026
             <span class="pc-exp" style="display:inline-flex;align-items:center;gap:4px;">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-alert-triangle"/></svg>
               Le quedan 7 días
             </span>
           </p>
@@ -3932,7 +4427,7 @@ body {
             <h3 class="pc-name">Petición de Servicios Públicos</h3>
             <span class="chip chip-inf">
               <span class="chip-dot" aria-hidden="true"></span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-send"/></svg>
               Recién enviada
             </span>
           </div>
@@ -3963,7 +4458,7 @@ body {
 
   <!-- V12: FAB Nueva petición s-pet - solo icono + -->
   <button class="fab" onclick="go('s-form')" aria-label="Crear nueva petición">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-plus"/></svg>
   </button>
 
   <nav class="nav" role="navigation" aria-label="Menú principal">
@@ -3976,7 +4471,7 @@ body {
     <button class="nav-tab on" onclick="nPet()" aria-current="page" aria-label="Mis peticiones">
       <div class="nav-ic-w">
         <div class="nav-dot" aria-hidden="true">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-file-text"/></svg>
         </div>
         <span class="nav-badge" aria-label="1 alerta">1</span>
       </div>
@@ -3984,7 +4479,7 @@ body {
     </button>
     <button class="nav-tab" onclick="nTo(this,'s-help')" aria-label="Ayuda y recursos">
       <div class="nav-dot" aria-hidden="true">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-help-circle"/></svg>
       </div>
       <span class="nav-lbl">Ayuda</span>
     </button>
@@ -4104,7 +4599,7 @@ body {
         <div class="tpl-divider">o si su caso es diferente</div>
 
         <button class="tpl-from-scratch" onclick="startFromScratch()" aria-label="Empezar mi petición desde cero, paso a paso">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-plus"/></svg>
           Empezar desde cero
         </button>
 
@@ -4123,7 +4618,7 @@ body {
         <h2 class="step-header-title" id="s1-ttl">¿Qué necesita de la entidad?</h2>
         <p class="step-header-desc">Cuéntenos qué pasa con sus propias palabras. Escoja la opción que más se parezca.</p>
       </div>
-      <div class="plain"><span class="plain-ico" aria-hidden="true">💡</span><span>Cada tipo tiene un plazo legal diferente. Eso le ayuda a saber cuándo esperar respuesta.</span></div>
+      <div class="plain"><span class="plain-ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c1 1 2 2 2 3.3h4c0-1.3 1-2.3 2-3.3A7 7 0 0 0 12 2z"/></svg></span><span>Cada tipo tiene un plazo legal diferente. Eso le ayuda a saber cuándo esperar respuesta.</span></div>
 
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
         <button class="btn-lnk" style="font-size:var(--t-sm);" onclick="osc('sc-types')" aria-label="Ver explicación detallada de cada tipo de petición">No estoy seguro, ayúdenme</button>
@@ -4134,7 +4629,7 @@ body {
         <div class="pt-opt" role="radio" tabindex="0" aria-checked="false" data-v="informacion"
           onclick="selT(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selT(this)}">
           <div class="pt-row">
-            <span class="pt-ico" aria-hidden="true">📄</span>
+            <span class="pt-ico" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
             <span class="pt-nm">Necesito información o un documento</span>
             <span class="pt-days" aria-label="Plazo de respuesta: 10 días hábiles">10 días</span>
             <span class="pt-sel-ico" aria-hidden="true">✓</span>
@@ -4145,7 +4640,7 @@ body {
         <div class="pt-opt sel" role="radio" tabindex="0" aria-checked="true" data-v="particular"
           onclick="selT(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selT(this)}">
           <div class="pt-row">
-            <span class="pt-ico" aria-hidden="true">🙋</span>
+            <span class="pt-ico" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11V6a2 2 0 0 1 4 0v6"/><path d="M9 11a2 2 0 1 0-4 0v3a8 8 0 0 0 16 0v-7a2 2 0 1 0-4 0v3"/><path d="M13 7a2 2 0 1 1 4 0v3"/></svg></span>
             <span class="pt-nm">Algo personal mío que necesito resolver</span>
             <span class="pt-default-hint" aria-label="Esta es la opción más común">Más común</span>
             <span class="pt-days" aria-label="Plazo de respuesta: 15 días hábiles">15 días</span>
@@ -4156,7 +4651,7 @@ body {
         <div class="pt-opt" role="radio" tabindex="0" aria-checked="false" data-v="general"
           onclick="selT(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selT(this)}">
           <div class="pt-row">
-            <span class="pt-ico" aria-hidden="true">🌍</span>
+            <span class="pt-ico" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span>
             <span class="pt-nm">Algo que afecta a mi barrio o comunidad</span>
             <span class="pt-days" aria-label="Plazo de respuesta: 15 días hábiles">15 días</span>
             <span class="pt-sel-ico" aria-hidden="true">✓</span>
@@ -4166,7 +4661,7 @@ body {
         <div class="pt-opt" role="radio" tabindex="0" aria-checked="false" data-v="consulta"
           onclick="selT(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selT(this)}">
           <div class="pt-row">
-            <span class="pt-ico" aria-hidden="true">❓</span>
+            <span class="pt-ico" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
             <span class="pt-nm">Tengo una pregunta sobre cómo aplica una norma</span>
             <span class="pt-days" aria-label="Plazo de respuesta: 30 días hábiles">30 días</span>
             <span class="pt-sel-ico" aria-hidden="true">✓</span>
@@ -4197,7 +4692,7 @@ body {
       <div style="text-align:center;">
         <button class="btn-lnk" onclick="saveDraft()"
           style="font-size: var(--t-sm); font-weight: 600; gap: 6px; display:inline-flex; align-items:center;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-save"/></svg>
           Seguir luego
         </button>
       </div>
@@ -4208,23 +4703,23 @@ body {
   <div class="fstep" id="fp2" role="region" aria-labelledby="s2-ttl">
     <div class="fstep-body">
       <div class="recall" role="note" aria-label="Recordatorio">
-        <span aria-hidden="true">📌</span><span>Tipo: <b id="rb1">—</b></span>
+        <span aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17z"/></svg></span><span>Tipo: <b id="rb1">—</b></span>
       </div>
       <div class="step-header" style="margin-top:14px;">
         <h2 class="step-header-title" id="s2-ttl">¿A quién va dirigida?</h2>
         <p class="step-header-desc">Si no recuerda el nombre exacto, búsquela por tema.</p>
       </div>
-      <div class="plain"><span class="plain-ico" aria-hidden="true">🏢</span><span><strong>¿No está seguro a quién enviarla?</strong> Toque un tema y le mostramos las entidades más comunes.</span></div>
+      <div class="plain"><span class="plain-ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="8" y1="6" x2="8" y2="6"/><line x1="12" y1="6" x2="12" y2="6"/><line x1="16" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/><line x1="10" y1="18" x2="14" y2="18"/></svg></span><span><strong>¿No está seguro a quién enviarla?</strong> Toque un tema y le mostramos las entidades más comunes.</span></div>
 
       <div class="ef" role="group" aria-labelledby="ef-ttl">
-        <div class="ef-head"><span aria-hidden="true" style="font-size:18px;">🔍</span><span class="ef-head-ttl" id="ef-ttl">Busque por tema</span></div>
+        <div class="ef-head"><span aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span><span class="ef-head-ttl" id="ef-ttl">Busque por tema</span></div>
         <div class="ef-grid" role="group" aria-label="Categorías de entidades">
-          <div class="ef-cat" data-c="salud"     onclick="fEnt(this)" tabindex="0" role="button" aria-label="Buscar entidades de Salud" onkeypress="if(event.key==='Enter')fEnt(this)"><span class="ef-cat-ico" aria-hidden="true">🏥</span><span class="ef-cat-nm">Salud</span></div>
-          <div class="ef-cat" data-c="pension"   onclick="fEnt(this)" tabindex="0" role="button" aria-label="Buscar entidades de Pensión" onkeypress="if(event.key==='Enter')fEnt(this)"><span class="ef-cat-ico" aria-hidden="true">💼</span><span class="ef-cat-nm">Pensión</span></div>
-          <div class="ef-cat" data-c="servicios" onclick="fEnt(this)" tabindex="0" role="button" aria-label="Buscar entidades de Servicios Públicos" onkeypress="if(event.key==='Enter')fEnt(this)"><span class="ef-cat-ico" aria-hidden="true">💧</span><span class="ef-cat-nm">Servicios</span></div>
-          <div class="ef-cat" data-c="educacion" onclick="fEnt(this)" tabindex="0" role="button" aria-label="Buscar entidades de Educación" onkeypress="if(event.key==='Enter')fEnt(this)"><span class="ef-cat-ico" aria-hidden="true">📚</span><span class="ef-cat-nm">Educación</span></div>
-          <div class="ef-cat" data-c="transito"  onclick="fEnt(this)" tabindex="0" role="button" aria-label="Buscar entidades de Tránsito" onkeypress="if(event.key==='Enter')fEnt(this)"><span class="ef-cat-ico" aria-hidden="true">🚗</span><span class="ef-cat-nm">Tránsito</span></div>
-          <div class="ef-cat" data-c="gobierno"  onclick="fEnt(this)" tabindex="0" role="button" aria-label="Buscar entidades de Gobierno" onkeypress="if(event.key==='Enter')fEnt(this)"><span class="ef-cat-ico" aria-hidden="true">🏛️</span><span class="ef-cat-nm">Gobierno</span></div>
+          <div class="ef-cat" data-c="salud"     onclick="fEnt(this)" tabindex="0" role="button" aria-label="Buscar entidades de Salud" onkeypress="if(event.key==='Enter')fEnt(this)"><span class="ef-cat-ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span><span class="ef-cat-nm">Salud</span></div>
+          <div class="ef-cat" data-c="pension"   onclick="fEnt(this)" tabindex="0" role="button" aria-label="Buscar entidades de Pensión" onkeypress="if(event.key==='Enter')fEnt(this)"><span class="ef-cat-ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></span><span class="ef-cat-nm">Pensión</span></div>
+          <div class="ef-cat" data-c="servicios" onclick="fEnt(this)" tabindex="0" role="button" aria-label="Buscar entidades de Servicios Públicos" onkeypress="if(event.key==='Enter')fEnt(this)"><span class="ef-cat-ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></span><span class="ef-cat-nm">Servicios</span></div>
+          <div class="ef-cat" data-c="educacion" onclick="fEnt(this)" tabindex="0" role="button" aria-label="Buscar entidades de Educación" onkeypress="if(event.key==='Enter')fEnt(this)"><span class="ef-cat-ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span><span class="ef-cat-nm">Educación</span></div>
+          <div class="ef-cat" data-c="transito"  onclick="fEnt(this)" tabindex="0" role="button" aria-label="Buscar entidades de Tránsito" onkeypress="if(event.key==='Enter')fEnt(this)"><span class="ef-cat-ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"/><circle cx="6.5" cy="16.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/></svg></span><span class="ef-cat-nm">Tránsito</span></div>
+          <div class="ef-cat" data-c="gobierno"  onclick="fEnt(this)" tabindex="0" role="button" aria-label="Buscar entidades de Gobierno" onkeypress="if(event.key==='Enter')fEnt(this)"><span class="ef-cat-ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="3" x2="12" y2="21"/><path d="M3 8h18"/><path d="M7 8l-3 8h6l-3-8z"/><path d="M17 8l-3 8h6l-3-8z"/></svg></span><span class="ef-cat-nm">Gobierno</span></div>
         </div>
       </div>
 
@@ -4271,14 +4766,14 @@ body {
       <div style="text-align:center;">
         <button class="btn-lnk" onclick="saveDraft()"
           style="font-size: var(--t-sm); font-weight: 600; gap: 6px; display:inline-flex; align-items:center;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-save"/></svg>
           Seguir luego
         </button>
       </div>
     </div>
   </div>
 
-  <!-- ══ PASO 3: Hechos ══ -->
+  <!-- ══ PASO 3: Hechos — V17: ahora con sub-vistas, una pregunta por pantalla ══ -->
   <div class="fstep" id="fp3" role="region" aria-labelledby="s3-ttl">
     <div class="fstep-body">
       <div class="recall" role="note">
@@ -4287,94 +4782,155 @@ body {
       </div>
       <div class="step-header" style="margin-top:14px;">
         <h2 class="step-header-title" id="s3-ttl">Cuéntenos qué pasó</h2>
-        <p class="step-header-desc">Con sus propias palabras. Nada de términos legales — nosotros nos encargamos de eso.</p>
+        <p class="step-header-desc">4 preguntas + vista previa + evidencia opcional.</p>
       </div>
 
-      <!-- B1: Asistente de redacción -->
-      <div class="writing-assistant" id="wa-container">
-        <div class="wa-header">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-          <span class="wa-header-txt">Le ayudamos a escribirlo</span>
-          <span style="font-size:var(--t-xs);color:var(--p);font-weight:600;">4 preguntas</span>
+      <!-- V18: Barra de progreso — 6 sub-pasos (4 preguntas + preview + evidencia) -->
+      <div class="fp3-progress" role="progressbar" aria-label="Avance del paso 3" aria-valuemin="0" aria-valuemax="6" aria-valuenow="1">
+        <div class="fp3-progress-track" aria-hidden="true">
+          <div class="fp3-progress-seg active" id="fp3-seg-0"></div>
+          <div class="fp3-progress-seg" id="fp3-seg-1"></div>
+          <div class="fp3-progress-seg" id="fp3-seg-2"></div>
+          <div class="fp3-progress-seg" id="fp3-seg-3"></div>
+          <div class="fp3-progress-seg" id="fp3-seg-4"></div>
+          <div class="fp3-progress-seg" id="fp3-seg-5"></div>
         </div>
+        <span class="fp3-progress-lbl" id="fp3-progress-lbl" aria-live="polite">1 de 6</span>
+      </div>
 
-        <div class="wa-question">
-          <label class="wa-q-label" for="wa-q1">¿Qué le está pasando?</label>
-          <span class="wa-q-hint">Lo principal, en una o dos frases</span>
-          <textarea class="wa-input" id="wa-q1" rows="2" maxlength="300" placeholder="Ej: Llevo 3 meses pidiendo cita con un cardiólogo y no me la dan" oninput="waUpdate(this,'wa-c1')"></textarea>
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;">
-            <button type="button" class="mic-btn" id="mic-q1"
+      <!-- B1: Asistente de redacción - V17: ahora cada pregunta vive en su propio sub-paso -->
+      <div class="writing-assistant" id="wa-container" style="background:transparent;border:none;padding:0;">
+
+<!-- V18: 4 preguntas, cada una con botón de dictado grande estilo WhatsApp -->
+        <div class="fp3-substep active" id="fp3-sub-0" data-substep="0">
+          <div class="fp3-sub-q">¿Qué le está pasando?</div>
+          <p class="fp3-sub-hint">Lo principal, en una o dos frases.</p>
+
+          <textarea class="wa-input" id="wa-q1" rows="4" maxlength="300" placeholder="Ej: Llevo 3 meses pidiendo cita con un cardiólogo y no me la dan" oninput="waUpdate(this,'wa-c1')"></textarea>
+          <div class="wa-char-row">
+            <div class="wa-char" id="wa-c1">0 / 300</div>
+          </div>
+
+          <div class="mic-btn-lg-wrap">
+            <button type="button" class="mic-btn-lg" id="mic-q1"
               data-label-idle="Dictar respuesta a: ¿Qué ocurrió?"
               onclick="voiceDictate('wa-q1','mic-q1', el => waUpdate(el,'wa-c1'))"
               aria-label="Dictar respuesta a: ¿Qué ocurrió?" aria-pressed="false">
               <svg class="mic-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
               <span class="mic-lbl">Dictar</span>
             </button>
-            <div class="wa-char" id="wa-c1">0 / 300</div>
+            <span class="mic-btn-lg-hint" id="mic-q1-hint">Mantenga presionado o toque para grabar</span>
           </div>
+
+        <div class="fp3-sub-nav">
+          <button class="btn btn-fill" onclick="fp3Next()" id="fp3-next-0">Continuar →</button>
+          
+        </div>
         </div>
 
-        <div class="wa-question">
-          <label class="wa-q-label" for="wa-q2">¿Desde cuándo?</label>
-          <span class="wa-q-hint">Una fecha o un periodo aproximado</span>
-          <textarea class="wa-input" id="wa-q2" rows="2" maxlength="150" placeholder="Ej: Desde enero de 2026. La última vez que llamé fue el 15 de marzo." oninput="waUpdate(this,'wa-c2')"></textarea>
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;">
-            <button type="button" class="mic-btn" id="mic-q2"
+        <div class="fp3-substep" id="fp3-sub-1" data-substep="1">
+          <div class="fp3-sub-q">¿Desde cuándo?</div>
+          <p class="fp3-sub-hint">Una fecha o un periodo aproximado.</p>
+
+          <textarea class="wa-input" id="wa-q2" rows="4" maxlength="150" placeholder="Ej: Desde enero de 2026. La última vez que llamé fue el 15 de marzo." oninput="waUpdate(this,'wa-c2')"></textarea>
+          <div class="wa-char-row">
+            <div class="wa-char" id="wa-c2">0 / 150</div>
+          </div>
+
+          <div class="mic-btn-lg-wrap">
+            <button type="button" class="mic-btn-lg" id="mic-q2"
               data-label-idle="Dictar respuesta a: ¿Cuándo ocurrió?"
               onclick="voiceDictate('wa-q2','mic-q2', el => waUpdate(el,'wa-c2'))"
               aria-label="Dictar respuesta a: ¿Cuándo ocurrió?" aria-pressed="false">
               <svg class="mic-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
               <span class="mic-lbl">Dictar</span>
             </button>
-            <div class="wa-char" id="wa-c2">0 / 150</div>
+            <span class="mic-btn-lg-hint" id="mic-q2-hint">Mantenga presionado o toque para grabar</span>
           </div>
+
+        <div class="fp3-sub-nav">
+          <button class="btn btn-fill" onclick="fp3Next()" id="fp3-next-1">Continuar →</button>
+          <button class="btn btn-back" onclick="fp3Prev()">← Atrás</button>
+        </div>
         </div>
 
-        <div class="wa-question">
-          <label class="wa-q-label" for="wa-q3">¿Qué derecho siente que le están negando?</label>
-          <span class="wa-q-hint">Opcional. Si no sabe, déjelo en blanco.</span>
-          <textarea class="wa-input" id="wa-q3" rows="2" maxlength="150" placeholder="Ej: Mi derecho a la salud y a recibir atención médica oportuna" oninput="waUpdate(this,'wa-c3')"></textarea>
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;">
-            <button type="button" class="mic-btn" id="mic-q3"
+        <div class="fp3-substep" id="fp3-sub-2" data-substep="2">
+          <div class="fp3-sub-q">¿Qué derecho siente que le están negando?</div>
+          <p class="fp3-sub-hint">Opcional. Si no sabe, déjelo en blanco y continúe.</p>
+
+          <textarea class="wa-input" id="wa-q3" rows="4" maxlength="150" placeholder="Ej: Mi derecho a la salud y a recibir atención médica oportuna" oninput="waUpdate(this,'wa-c3')"></textarea>
+          <div class="wa-char-row">
+            <div class="wa-char" id="wa-c3">0 / 150</div>
+          </div>
+
+          <div class="mic-btn-lg-wrap">
+            <button type="button" class="mic-btn-lg" id="mic-q3"
               data-label-idle="Dictar respuesta a: ¿Qué derecho considera vulnerado?"
               onclick="voiceDictate('wa-q3','mic-q3', el => waUpdate(el,'wa-c3'))"
               aria-label="Dictar respuesta a: ¿Qué derecho considera vulnerado?" aria-pressed="false">
               <svg class="mic-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
               <span class="mic-lbl">Dictar</span>
             </button>
-            <div class="wa-char" id="wa-c3">0 / 150</div>
+            <span class="mic-btn-lg-hint" id="mic-q3-hint">Mantenga presionado o toque para grabar</span>
           </div>
+
+        <div class="fp3-sub-nav">
+          <button class="btn btn-fill" onclick="fp3Next()" id="fp3-next-2">Continuar →</button>
+          <button class="btn btn-back" onclick="fp3Prev()">← Atrás</button>
+        </div>
         </div>
 
-        <div class="wa-question">
-          <label class="wa-q-label" for="wa-q4">¿Qué pruebas tiene?</label>
-          <span class="wa-q-hint">Opcional. Llamadas, correos, recibos, idas a la entidad.</span>
-          <textarea class="wa-input" id="wa-q4" rows="2" maxlength="150" placeholder="Ej: 5 llamadas al call center y un correo del 12 de abril sin respuesta" oninput="waUpdate(this,'wa-c4')"></textarea>
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;">
-            <button type="button" class="mic-btn" id="mic-q4"
+        <div class="fp3-substep" id="fp3-sub-3" data-substep="3">
+          <div class="fp3-sub-q">¿Qué ha hecho para resolverlo?</div>
+          <p class="fp3-sub-hint">Llamadas, correos, idas a la entidad. Opcional pero ayuda.</p>
+
+          <textarea class="wa-input" id="wa-q4" rows="4" maxlength="150" placeholder="Ej: 5 llamadas al call center y un correo del 12 de abril sin respuesta" oninput="waUpdate(this,'wa-c4')"></textarea>
+          <div class="wa-char-row">
+            <div class="wa-char" id="wa-c4">0 / 150</div>
+          </div>
+
+          <div class="mic-btn-lg-wrap">
+            <button type="button" class="mic-btn-lg" id="mic-q4"
               data-label-idle="Dictar respuesta a: ¿Qué evidencia tiene?"
               onclick="voiceDictate('wa-q4','mic-q4', el => waUpdate(el,'wa-c4'))"
               aria-label="Dictar respuesta a: ¿Qué evidencia tiene?" aria-pressed="false">
               <svg class="mic-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
               <span class="mic-lbl">Dictar</span>
             </button>
-            <div class="wa-char" id="wa-c4">0 / 150</div>
+            <span class="mic-btn-lg-hint" id="mic-q4-hint">Mantenga presionado o toque para grabar</span>
+          </div>
+
+        <div class="fp3-sub-nav">
+          <button class="btn btn-fill" onclick="fp3Next()" id="fp3-next-3">Continuar →</button>
+          <button class="btn btn-back" onclick="fp3Prev()">← Atrás</button>
+        </div>
+        </div>
+
+        <!-- ── SUB-PASO 5: VISTA PREVIA DEL TEXTO CONSOLIDADO (V18) ── -->
+        <div class="fp3-substep" id="fp3-sub-4" data-substep="4">
+          <div class="fp3-sub-q">Así quedaría su relato</div>
+          <p class="fp3-sub-hint">Combinamos sus respuestas en un texto formal. Puede ajustarlo si quiere.</p>
+
+          <textarea class="wa-result-txt" id="wa-consolidated" rows="10" oninput="syncFactsFromWA()" style="width:100%;border:1.5px solid var(--bdr);border-radius:var(--r8);padding:14px 16px;font-family:var(--f);font-size:var(--t-sm);color:var(--d);resize:vertical;min-height:200px;background:var(--sur);line-height:1.55;"></textarea>
+
+          <div class="mic-btn-lg-wrap" style="margin-top:16px;">
+            <button type="button" class="mic-btn-lg" id="mic-consol"
+              data-label-idle="Dictar para complementar la narración"
+              onclick="voiceDictate('wa-consolidated','mic-consol', () => syncFactsFromWA())"
+              aria-label="Dictar para complementar la narración" aria-pressed="false">
+              <svg class="mic-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+              <span class="mic-lbl">Dictar</span>
+            </button>
+            <span class="mic-btn-lg-hint">¿Falta algo? Agréguelo hablando o escribiendo.</span>
+          </div>
+
+          <div class="fp3-sub-nav">
+            <button class="btn btn-fill" onclick="fp3Next()" id="fp3-next-4">Está perfecto, continuar →</button>
+            <button class="btn btn-back" onclick="fp3Prev()">← Volver a editar</button>
           </div>
         </div>
 
-        <div class="wa-result" id="wa-result">
-          <div class="wa-result-label">Así quedaría su relato. Puede ajustarlo:</div>
-          <textarea class="wa-result-txt" id="wa-consolidated" rows="5" oninput="syncFactsFromWA()"></textarea>
-          <button type="button" class="mic-btn" id="mic-consol"
-            data-label-idle="Dictar para complementar la narración"
-            onclick="voiceDictate('wa-consolidated','mic-consol', () => syncFactsFromWA())"
-            aria-label="Dictar para complementar la narración" aria-pressed="false">
-            <svg class="mic-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-            <span class="mic-lbl">Dictar</span>
-          </button>
-        </div>
-
-        <div class="wa-switch-row">
+        <div class="wa-switch-row" style="display:none;">
           <button class="btn-lnk" onclick="toggleFreeWriting()" style="font-size:var(--t-xs);" aria-label="Cambiar al modo de escritura libre">Prefiero escribir todo yo →</button>
         </div>
       </div>
@@ -4388,13 +4944,13 @@ body {
         <button class="voice-btn" id="vbtn" onclick="tVoice()"
           aria-label="Contar los hechos hablando con el micrófono"
           aria-pressed="false">
-          <span class="vb-ico" aria-hidden="true">🎙️</span>
+          <span class="vb-ico" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></span>
           <span id="vbtxt">Prefiero hablar — cuente lo que pasó</span>
         </button>
 
         <!-- R11: frases de guía agrupadas con título -->
         <div class="tags-wrap" role="group" aria-labelledby="tags-ttl-3">
-          <div class="tags-ttl" id="tags-ttl-3">💡 Toque una frase para empezar:</div>
+          <div class="tags-ttl" id="tags-ttl-3"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c1 1 2 2 2 3.3h4c0-1.3 1-2.3 2-3.3A7 7 0 0 0 12 2z"/></svg> Toque una frase para empezar:</div>
           <button class="tag" onclick="ins('Desde hace [tiempo], ')" aria-label="Insertar: Desde hace...">Desde hace...</button>
           <button class="tag" onclick="ins('He pedido [qué] varias veces y no me han respondido. ')" aria-label="Insertar: No me responden">No me responden...</button>
           <button class="tag" onclick="ins('Me cobraron de más por [concepto]. ')" aria-label="Insertar: Me cobraron de más">Me cobraron de más...</button>
@@ -4426,9 +4982,13 @@ body {
         aria-required="true"
         oninput="uCC(this)"></textarea>
 
-      <!-- ══ EVIDENCIA — adjuntar imágenes y archivos que respaldan los hechos ══ -->
+      <!-- ══ SUB-PASO 6: EVIDENCIA (V18: ahora es el sub-paso 5, índice 5) ══ -->
+      <div class="fp3-substep" id="fp3-sub-5" data-substep="5">
+        <div class="fp3-sub-q">¿Tiene pruebas para adjuntar?</div>
+        <p class="fp3-sub-hint">Fotos, PDFs o documentos que respalden lo que cuenta. Es opcional — si no las tiene, simplemente continúe.</p>
+
       <div class="evidence-section" role="region" aria-labelledby="evidence-ttl">
-        <div class="evidence-header">
+        <div class="evidence-header" style="display:none;">
           <div class="evidence-header-icon" aria-hidden="true">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
           </div>
@@ -4472,7 +5032,7 @@ body {
             <span>De mi galería</span>
           </button>
           <button type="button" class="evidence-quick-btn" onclick="evDocs()" aria-label="Escoger documento PDF o Word">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-file"/></svg>
             <span>Un PDF o Word</span>
           </button>
         </div>
@@ -4482,17 +5042,25 @@ body {
 
         <!-- Aviso legal — Habeas Data -->
         <p class="evidence-legal" role="note">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:middle;margin-right:3px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:middle;margin-right:3px;"><use href="#i-shield"/></svg>
           Sus archivos viajan cifrados. Solo la entidad destinataria los puede leer.
         </p>
+
+        <!-- V18: Nav final — Continuar arriba, Omitir sutil abajo, Atrás más abajo -->
+        <div class="fp3-sub-nav">
+          <button class="btn btn-fill" onclick="fp3FinishStep(false)" id="fp3-finish" aria-label="Continuar al paso 4">Continuar al paso 4 →</button>
+          <button class="btn btn-skip" onclick="fp3FinishStep(true)" id="fp3-skip" aria-label="Omitir este paso y continuar sin adjuntar archivos">No tengo pruebas, omitir este paso</button>
+          <button class="btn btn-back" onclick="fp3Prev()">← Atrás</button>
+        </div>
       </div>
+      </div><!-- fin fp3-sub-5 -->
     </div>
-    <div class="fstep-acts">
+    <div class="fstep-acts" style="display:none;">
       <button class="btn btn-fill" id="s3n" disabled onclick="gS(4)">Continuar →</button>
       <div style="text-align:center;">
         <button class="btn-lnk" onclick="saveDraft()"
           style="font-size: var(--t-sm); font-weight: 600; gap: 6px; display:inline-flex; align-items:center;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-save"/></svg>
           Seguir luego
         </button>
       </div>
@@ -4510,7 +5078,7 @@ body {
         <h2 class="step-header-title" id="s4-ttl">¿Qué quiere que hagan?</h2>
         <p class="step-header-desc">Sea específico: qué quiere y en cuánto tiempo. Eso ayuda a que respondan rápido.</p>
       </div>
-      <div class="plain"><span class="plain-ico" aria-hidden="true">🎯</span><span><strong>Un consejo:</strong> mientras más claro sea con lo que pide, más fácil le será a la entidad respondérselo.</span></div>
+      <div class="plain"><span class="plain-ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span><span><strong>Un consejo:</strong> mientras más claro sea con lo que pide, más fácil le será a la entidad respondérselo.</span></div>
 
       <!-- B3: Plantillas de solicitud -->
       <div id="template-section">
@@ -4521,7 +5089,7 @@ body {
             Que me asignen cita médica en máximo 5 días hábiles y me notifiquen la fecha.
           </button>
           <button class="template-chip" onclick="applyTemplate(this, 'Que me entreguen copia de todos los documentos relacionados con mi caso, en un plazo de 10 días hábiles.')" aria-label="Plantilla: Entrega de documentos">
-            <svg class="template-chip-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <svg class="template-chip-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-file"/></svg>
             Que me entreguen copia de los documentos de mi caso en 10 días hábiles.
           </button>
           <button class="template-chip" onclick="applyTemplate(this, 'Que corrijan el cobro incorrecto en mi factura y me reintegren el valor pagado de más en un plazo de 5 días hábiles.')" aria-label="Plantilla: Corrección de cobro">
@@ -4529,7 +5097,7 @@ body {
             Que corrijan el cobro incorrecto y me devuelvan el valor de más en 5 días.
           </button>
           <button class="template-chip" onclick="applyTemplate(this, 'Que me expliquen por escrito las razones de la decisión tomada y el procedimiento para impugnarla, en un plazo de 15 días hábiles.')" aria-label="Plantilla: Explicación de decisión">
-            <svg class="template-chip-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <svg class="template-chip-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-help-circle"/></svg>
             Que me expliquen por escrito las razones de su decisión en 15 días hábiles.
           </button>
         </div>
@@ -4550,20 +5118,12 @@ body {
             data-label-idle="Dictar su solicitud oficial"
             onclick="voiceDictate('reqTA','mic-req', () => ckS4())"
             aria-label="Dictar su solicitud oficial" aria-pressed="false">
-            <svg class="mic-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            <svg class="mic-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-lock-closed"/></svg>
             <span class="mic-lbl">Dictar</span>
           </button>
         </div>
         <!-- R8: mensaje de validación accionable -->
         <div class="fld-msg" id="req-m" role="alert" aria-live="polite" aria-atomic="true"></div>
-      </div>
-
-      <div class="tags-wrap" role="group" aria-labelledby="tags-ttl-4">
-        <div class="tags-ttl" id="tags-ttl-4">💡 Toque para empezar una frase:</div>
-        <button class="tag" onclick="insR('Que me asignen [qué] en un plazo de [tiempo]. ')" aria-label="Empezar: Que me asignen">Que me asignen...</button>
-        <button class="tag" onclick="insR('Que me entreguen copia de [documento]. ')" aria-label="Empezar: Que me entreguen">Que me entreguen...</button>
-        <button class="tag" onclick="insR('Que corrijan el cobro de [concepto] y me devuelvan lo cobrado de más. ')" aria-label="Empezar: Que corrijan">Que corrijan...</button>
-        <button class="tag" onclick="insR('Que me expliquen por qué [situación]. ')" aria-label="Empezar: Que me expliquen">Que me expliquen...</button>
       </div>
     </div>
     <div class="fstep-acts">
@@ -4571,7 +5131,7 @@ body {
       <div style="text-align:center;">
         <button class="btn-lnk" onclick="saveDraft()"
           style="font-size: var(--t-sm); font-weight: 600; gap: 6px; display:inline-flex; align-items:center;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-save"/></svg>
           Seguir luego
         </button>
       </div>
@@ -4590,6 +5150,15 @@ body {
         <p class="step-header-desc">La entidad usará estos datos para responderle. Revise que estén bien.</p>
       </div>
 
+      <!-- V18: Toggle tercero MOVIDO arriba — es la primera decisión importante del paso 5 -->
+      <div class="third-party-toggle" onclick="toggleThirdParty()" role="checkbox" aria-checked="false" tabindex="0"
+        id="third-party-row" aria-label="Estoy haciendo esta petición en nombre de otra persona"
+        onkeypress="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleThirdParty()}"
+        style="margin-bottom:18px;">
+        <div class="toggle-switch" id="third-toggle" aria-hidden="true"><div class="toggle-knob"></div></div>
+        <span class="toggle-label">Estoy ayudando a otra persona</span>
+      </div>
+
       <!-- B2: Perfil pre-llenado -->
       <div class="profile-bar" id="profile-bar">
         <span class="profile-bar-txt">
@@ -4601,14 +5170,14 @@ body {
 
       <!-- R11: agrupación clara con sección titulada -->
       <div class="data-section-header" role="heading" aria-level="3">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-shield"/></svg>
         Sus datos personales
       </div>
       <p style="font-size:var(--t-sm);color:var(--dm);margin-bottom:16px;">Son confidenciales. Solo los usamos para que la entidad pueda responderle.</p>
 
       <!-- Aviso de dictado disponible al editar o representar a un tercero -->
       <div id="voice-data-hint" style="display:none;background:var(--pl);border:1.5px solid var(--plm);border-radius:var(--r12);padding:10px 14px;margin-bottom:16px;gap:10px;align-items:flex-start;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--p)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;margin-top:2px;"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--p)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;margin-top:2px;"><use href="#i-lock-closed"/></svg>
         <p style="font-size:var(--t-xs);color:var(--p);font-weight:600;line-height:1.5;margin:0;">¿Prefiere hablar? Toque "Dictar" debajo de cada campo y nosotros escribimos lo que diga.</p>
       </div>
 
@@ -4627,7 +5196,7 @@ body {
           data-label-idle="Dictar nombre completo"
           onclick="voiceDictate('petN','mic-petN', () => ckS5())"
           aria-label="Dictar nombre completo" aria-pressed="false">
-          <svg class="mic-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          <svg class="mic-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-lock-closed"/></svg>
           <span class="mic-lbl">Dictar</span>
         </button>
       </div>
@@ -4647,7 +5216,7 @@ body {
           data-label-idle="Dictar número de cédula"
           onclick="voiceDictate('petD','mic-petD', () => ckS5(), 'numeric')"
           aria-label="Dictar número de cédula" aria-pressed="false">
-          <svg class="mic-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          <svg class="mic-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-lock-closed"/></svg>
           <span class="mic-lbl">Dictar dígitos</span>
         </button>
       </div>
@@ -4666,7 +5235,7 @@ body {
           data-label-idle="Dictar correo electrónico"
           onclick="voiceDictate('petE','mic-petE', () => ckS5())"
           aria-label="Dictar correo electrónico" aria-pressed="false">
-          <svg class="mic-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          <svg class="mic-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-lock-closed"/></svg>
           <span class="mic-lbl">Dictar</span>
         </button>
         <div class="fld-msg" id="petE-m" role="alert" aria-live="polite"></div>
@@ -4685,7 +5254,7 @@ body {
           data-label-idle="Dictar teléfono"
           onclick="voiceDictate('petT','mic-petT', null, 'numeric')"
           aria-label="Dictar teléfono" aria-pressed="false">
-          <svg class="mic-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          <svg class="mic-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-lock-closed"/></svg>
           <span class="mic-lbl">Dictar dígitos</span>
         </button>
       </div>
@@ -4702,18 +5271,11 @@ body {
           data-label-idle="Dictar dirección"
           onclick="voiceDictate('petA','mic-petA')"
           aria-label="Dictar dirección" aria-pressed="false">
-          <svg class="mic-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          <svg class="mic-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-lock-closed"/></svg>
           <span class="mic-lbl">Dictar</span>
         </button>
       </div>
 
-      <!-- B2: Toggle tercero -->
-      <div class="third-party-toggle" onclick="toggleThirdParty()" role="checkbox" aria-checked="false" tabindex="0"
-        id="third-party-row" aria-label="Estoy haciendo esta petición en nombre de otra persona"
-        onkeypress="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleThirdParty()}">
-        <div class="toggle-switch" id="third-toggle" aria-hidden="true"><div class="toggle-knob"></div></div>
-        <span class="toggle-label">Estoy ayudando a otra persona</span>
-      </div>
     </div>
     <div class="fstep-acts">
       <button class="btn btn-fill" id="s5n" onclick="go('s-rev');syncRev()" aria-label="Revisar todo antes de enviar">
@@ -4722,7 +5284,7 @@ body {
       <div style="text-align:center;">
         <button class="btn-lnk" onclick="saveDraft()"
           style="font-size: var(--t-sm); font-weight: 600; gap: 6px; display:inline-flex; align-items:center;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-save"/></svg>
           Seguir luego
         </button>
       </div>
@@ -4731,7 +5293,7 @@ body {
 
   <!-- V8: FAB Pedir ayuda persistente en wizard -->
   <button class="help-fab in-form" onclick="askForHelp()" aria-label="Pedir ayuda mientras crea la petición">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-help-circle"/></svg>
   </button>
 </div>
 
@@ -4744,7 +5306,6 @@ body {
     <div style="position:relative;z-index:1;">
       <button style="background:none;border:none;color:rgba(255,255,255,.8);font-size:var(--t-sm);font-weight:700;cursor:pointer;padding:0 0 10px;font-family:var(--f);min-height:var(--tap);border-radius:var(--r8);" onclick="go('s-form')" aria-label="Volver para hacer cambios">‹ Volver a editar</button>
     </div>
-    <div class="rv-ck" aria-hidden="true">✅</div>
     <h1 class="rv-ttl">Casi lista</h1>
     <p class="rv-sub">Dele un vistazo. Si algo no está bien, puede arreglarlo antes de enviar.</p>
   </div>
@@ -4752,7 +5313,7 @@ body {
   <div class="tts-row" onclick="readAloud()" role="button" tabindex="0"
     aria-label="Que la app le lea toda la petición en voz alta"
     onkeypress="if(event.key==='Enter'||event.key===' ')readAloud()">
-    <div class="tts-ico" aria-hidden="true">🔊</div>
+    <div class="tts-ico" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg></div>
     <div>
       <div class="tts-ttl">¿Prefiere escucharla?</div>
       <div class="tts-sub">Le leemos toda su petición en voz alta</div>
@@ -4807,7 +5368,7 @@ body {
     </button>
 
     <button class="btn btn-fill" id="sendBtn" onclick="doSend()" aria-label="Enviar mi petición a la entidad">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-send"/></svg>
       Enviar mi petición
     </button>
     <div style="text-align:center; padding-top:4px;">
@@ -4829,7 +5390,7 @@ body {
 <div id="s-success" class="screen" role="main" aria-label="Petición enviada con éxito">
   <div class="success-hero">
     <div class="success-checkmark" aria-hidden="true">
-      <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><use href="#i-check"/></svg>
     </div>
     <h1 class="success-ttl">¡Listo! Su petición ya está en camino</h1>
     <p class="success-sub">La entidad la recibió. Ahora le toca a ellos responder.</p>
@@ -4852,7 +5413,7 @@ body {
         Enviada hoy, <b id="success-fecha">7 may 2026</b>
       </span>
       <span class="success-radicado-meta-item">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-clock"/></svg>
         Le deben responder antes del <b id="success-plazo-date">28 may 2026</b>
       </span>
       <button class="success-copy-btn" onclick="copyRadicado()" aria-label="Copiar el número de radicado">
@@ -4865,7 +5426,7 @@ body {
   <!-- V10-1: Recordatorio ACTIVADO POR DEFECTO (opt-out — Default de Thaler) -->
   <div class="reminder-default-active" id="reminder-default" role="status" aria-live="polite">
     <div class="rda-ico" aria-hidden="true">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-bell"/></svg>
     </div>
     <div class="rda-body">
       <div class="rda-ttl" id="reminder-default-ttl">Recordatorio activado</div>
@@ -4890,7 +5451,7 @@ body {
 
     <button class="success-action-card" onclick="go('s-case')" aria-label="Ver el caso con su línea de tiempo">
       <div class="success-action-ico wrn" aria-hidden="true">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-file-text"/></svg>
       </div>
       <div class="success-action-txt">
         <div class="success-action-ttl">Ver mi caso</div>
@@ -5008,7 +5569,7 @@ body {
     <!-- Acciones bajo el documento -->
     <div class="doc-preview-actions">
       <button class="btn btn-fill" onclick="closeDocPreview()" aria-label="Volver a revisión y enviar">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-check"/></svg>
         Está perfecto, volver a enviar
       </button>
       <button class="btn btn-soft" onclick="closeDocPreview()" aria-label="Volver a editar mi petición">
@@ -5027,7 +5588,7 @@ body {
     </button>
     <span class="bar-title">Mi caso</span>
     <button class="simple-header-btn on-dark" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);" onclick="openNotifications()" aria-label="Notificaciones">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-bell"/></svg>
     </button>
   </div>
 
@@ -5039,7 +5600,7 @@ body {
       <span class="case-summary-status" id="case-status-chip">
         <span class="chip chip-wrn">
           <span class="chip-dot" aria-hidden="true"></span>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-clock"/></svg>
           En proceso
         </span>
       </span>
@@ -5060,7 +5621,7 @@ body {
     <!-- V15: Bloque de RESPUESTA (solo visible cuando status = 'respondida') -->
     <div class="case-block case-response-block" id="case-response-block" style="display:none;border-color:var(--ok);background:var(--okl);" role="region" aria-label="Respuesta de la entidad">
       <h2 class="case-block-ttl" style="color:var(--okd);">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-check"/></svg>
         <span id="case-response-title">Respuesta de la entidad</span>
       </h2>
       <p style="font-size:var(--t-sm);color:var(--d);line-height:1.55;margin-bottom:12px;" id="case-response-summary">
@@ -5068,7 +5629,7 @@ body {
       </p>
       <div class="case-doc-row" style="background:var(--sur);">
         <div class="case-doc-ico" style="background:var(--okl);color:var(--okd);" aria-hidden="true">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-file"/></svg>
         </div>
         <div class="case-doc-info">
           <div class="case-doc-name" id="case-response-doc-name">Respuesta.pdf</div>
@@ -5081,7 +5642,7 @@ body {
     <!-- Bloque escalamiento — solo aparece si está vencido -->
     <div class="case-escalate" id="case-escalate" role="region" aria-label="Opciones legales porque la entidad no respondió">
       <div class="case-escalate-ttl">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-alert-triangle"/></svg>
         Se cumplió el plazo y no respondieron
       </div>
       <p class="case-escalate-sub">Esto pasa más seguido de lo que debería. La buena noticia: usted puede poner una <b>tutela</b>. Es gratis, no necesita abogado y un juez decide en 10 días. Le ayudamos a armarla.</p>
@@ -5097,7 +5658,7 @@ body {
     <!-- Bloque: Estado del trámite (timeline) -->
     <div class="case-block" role="region" aria-label="Cómo va su caso">
       <h2 class="case-block-ttl">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-clock"/></svg>
         Cómo va su caso
       </h2>
       <ol id="case-timeline" style="list-style:none;padding:0;margin:0;">
@@ -5123,7 +5684,7 @@ body {
     <!-- Bloque: Documento original + radicado -->
     <div class="case-block" role="region" aria-label="Documento original y radicado">
       <h2 class="case-block-ttl">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-file"/></svg>
         Su documento oficial
       </h2>
       <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:6px;">
@@ -5132,7 +5693,7 @@ body {
       </div>
       <div class="case-doc-row">
         <div class="case-doc-ico" aria-hidden="true">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-file"/></svg>
         </div>
         <div class="case-doc-info">
           <div class="case-doc-name" id="case-doc-name">Peticion-Pension-DP-2026-08842.pdf</div>
@@ -5160,7 +5721,7 @@ body {
       </div>
       <div class="case-doc-row" style="margin-top:8px;">
         <div class="case-doc-ico" aria-hidden="true">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-file"/></svg>
         </div>
         <div class="case-doc-info">
           <div class="case-doc-name">Historial-llamadas.pdf</div>
@@ -5173,7 +5734,7 @@ body {
     <!-- Bloque: respuestas -->
     <div class="case-block" role="region" aria-label="Respuestas de la entidad">
       <h2 class="case-block-ttl">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-message-circle"/></svg>
         Respuestas
       </h2>
       <p style="font-size:var(--t-sm);color:var(--dm);line-height:1.5;text-align:center;padding:20px 0;">
@@ -5185,7 +5746,7 @@ body {
 
   <!-- FAB de ayuda persistente en caso -->
   <button class="help-fab in-case" onclick="askForHelp()" aria-label="Pedir ayuda con este caso">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-help-circle"/></svg>
   </button>
 </div>
 
@@ -5199,7 +5760,7 @@ body {
     <span class="bar-title">Ayuda</span>
     <!-- V14: Logout accesible desde el header -->
     <button class="bar-logout-btn" onclick="confirmLogout()" aria-label="Cerrar sesión">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-logout"/></svg>
     </button>
   </div>
   <div class="scroll pb">
@@ -5211,7 +5772,7 @@ body {
         <div class="help-human-sub">Tenemos asesores reales que le ayudan a entender su caso o a armar su petición. Sin costo.</div>
         <div class="help-human-actions">
           <button class="help-human-btn" onclick="contactWhatsApp()" aria-label="Escribirnos por WhatsApp">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-message-circle"/></svg>
             Escribirnos
           </button>
           <button class="help-human-btn" onclick="contactCall()" aria-label="Llamar a la línea gratuita">
@@ -5237,9 +5798,9 @@ body {
         <span class="hlp-arr" aria-hidden="true">›</span>
       </div>
 
-      <div class="hlp-item" onclick="osc('sc-types')" tabindex="0" role="button" aria-label="Tipos de petición y cuánto tiempo tiene la entidad para responder" onkeypress="if(event.key==='Enter'||event.key===' ')osc('sc-types')">
+      <div class="hlp-item" onclick="osc('sc-deadlines')" tabindex="0" role="button" aria-label="Cuánto tiempo tiene la entidad para responder" onkeypress="if(event.key==='Enter'||event.key===' ')osc('sc-deadlines')">
         <div class="hlp-ico" aria-hidden="true">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--p)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--p)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-clock"/></svg>
         </div>
         <div class="hlp-txt">
           <div class="hlp-ttl">¿Cuánto se demoran en responder?</div>
@@ -5344,7 +5905,7 @@ body {
         aria-label="Cerrar mi sesión"
         onkeypress="if(event.key==='Enter')osc('sc-logout-confirm')">
         <div class="hlp-ico" style="background:var(--errl);" aria-hidden="true">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--err)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--err)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-logout"/></svg>
         </div>
         <div class="hlp-txt">
           <div class="hlp-ttl" style="color:var(--errd);">Cerrar sesión</div>
@@ -5365,7 +5926,7 @@ body {
     <button class="nav-tab" onclick="nPet()" aria-label="Mis peticiones">
       <div class="nav-ic-w">
         <div class="nav-dot" aria-hidden="true">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-file-text"/></svg>
         </div>
         <span class="nav-badge" aria-label="1 alerta">1</span>
       </div>
@@ -5373,7 +5934,7 @@ body {
     </button>
     <button class="nav-tab on" aria-current="page" aria-label="Ayuda (página actual)">
       <div class="nav-dot" aria-hidden="true">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-help-circle"/></svg>
       </div>
       <span class="nav-lbl">Ayuda</span>
     </button>
@@ -5406,7 +5967,9 @@ const D = {
   petitionsSent: 0,
   // V11: Lista de peticiones creadas por el usuario en la sesión actual.
   // En producción persistiría en localStorage / backend. Para MVP es in-memory.
-  userPetitions: []
+  userPetitions: [],
+  // V17: Sub-paso actual del paso 3 (0..4 → 4 preguntas + evidencia)
+  fp3SubStep: 0
 };
 
 /* ══════════════════════════════════════════════
@@ -5489,10 +6052,105 @@ function updateDeadlineCalc() {
 }
 
 /* ══ DATOS ══ */
+/* V17: Onboarding con ILUSTRACIONES SVG en lugar de emojis.
+   Cada ico contiene una escena vectorial completa (ciudadano + entidad + documento, etc.) */
 const OBS = [
-  { ico:'🙋', tag:'📖 Su derecho', ttl:'Le explicamos en un minuto', txt:'El Derecho de Petición es la herramienta gratuita que la Constitución le da para pedirle algo a cualquier entidad pública: información, una solución o una explicación. <strong>No necesita abogado.</strong>', note:'⏱️ Por ley, la entidad debe responderle en <strong>máximo 15 días hábiles</strong>.' },
-  { ico:'✅', tag:'🏥 ¿Cuándo le sirve?', ttl:'Más casos de los que imagina', txt:'Cita médica que no llega, pensión que no avanza, factura cobrada de más, trámite estancado... <strong>Si una entidad pública le está fallando, usted tiene derecho a exigir respuesta.</strong>', note:'✅ Totalmente <strong>gratis</strong>. No necesita saber de leyes — nosotros lo guiamos.' },
-  { ico:'🎙️', tag:'⚡ Así funciona', ttl:'5 pasos y listo', txt:'Le hacemos preguntas sencillas. Si prefiere, <strong>cuéntenos hablando</strong> y nosotros escribimos por usted. Armamos el documento oficial, lo enviamos y le avisamos cuando responda.', note:'🔔 Si la entidad se demora más de lo legal, le decimos qué hacer.' },
+  {
+    ico: `<svg viewBox="0 0 120 120" width="120" height="120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <!-- Personaje (ciudadano) -->
+      <circle cx="60" cy="38" r="14" fill="#FFD27D" stroke="#0F1F33" stroke-width="2.5"/>
+      <path d="M 38 90 Q 38 65, 60 65 Q 82 65, 82 90 L 82 100 L 38 100 Z" fill="#4FA3D1" stroke="#0F1F33" stroke-width="2.5"/>
+      <!-- Brazo levantado pidiendo -->
+      <line x1="78" y1="72" x2="92" y2="50" stroke="#FFD27D" stroke-width="6" stroke-linecap="round"/>
+      <circle cx="92" cy="48" r="5" fill="#FFD27D" stroke="#0F1F33" stroke-width="2.5"/>
+      <!-- Documento legal flotando -->
+      <rect x="20" y="20" width="22" height="28" rx="2" fill="#FFFFFF" stroke="#0F1F33" stroke-width="2"/>
+      <line x1="24" y1="28" x2="38" y2="28" stroke="#0F1F33" stroke-width="1.5"/>
+      <line x1="24" y1="32" x2="38" y2="32" stroke="#0F1F33" stroke-width="1.5"/>
+      <line x1="24" y1="36" x2="36" y2="36" stroke="#0F1F33" stroke-width="1.5"/>
+      <!-- Línea de conexión -->
+      <path d="M 42 38 Q 50 35, 56 38" stroke="#3B6D11" stroke-width="2" stroke-linecap="round" stroke-dasharray="2 3" fill="none"/>
+      <!-- Sello/estrella decorativa -->
+      <circle cx="100" cy="92" r="10" fill="#3B6D11" opacity="0.15"/>
+      <path d="M 100 86 L 102 90 L 106 90 L 103 93 L 104 97 L 100 95 L 96 97 L 97 93 L 94 90 L 98 90 Z" fill="#3B6D11"/>
+    </svg>`,
+    tag: 'Su derecho',
+    ttl: 'Le explicamos en un minuto',
+    txt: 'El Derecho de Petición es la herramienta gratuita que la Constitución le da para pedirle algo a cualquier entidad pública: información, una solución o una explicación. <strong>No necesita abogado.</strong>',
+    note: 'Por ley, la entidad debe responderle en <strong>máximo 15 días hábiles</strong>.'
+  },
+  {
+    ico: `<svg viewBox="0 0 120 120" width="120" height="120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <!-- Edificios institucionales -->
+      <rect x="14" y="48" width="20" height="50" fill="#4FA3D1" stroke="#0F1F33" stroke-width="2.5"/>
+      <polygon points="14,48 24,38 34,48" fill="#3786B7" stroke="#0F1F33" stroke-width="2.5"/>
+      <rect x="18" y="58" width="4" height="6" fill="#FFFFFF"/>
+      <rect x="26" y="58" width="4" height="6" fill="#FFFFFF"/>
+      <rect x="18" y="70" width="4" height="6" fill="#FFFFFF"/>
+      <rect x="26" y="70" width="4" height="6" fill="#FFFFFF"/>
+      <!-- Edificio central -->
+      <rect x="42" y="30" width="32" height="68" fill="#FFFFFF" stroke="#0F1F33" stroke-width="2.5"/>
+      <polygon points="42,30 58,18 74,30" fill="#FFD27D" stroke="#0F1F33" stroke-width="2.5"/>
+      <rect x="55" y="65" width="6" height="33" fill="#3B6D11"/>
+      <rect x="48" y="40" width="6" height="8" fill="#4FA3D1"/>
+      <rect x="62" y="40" width="6" height="8" fill="#4FA3D1"/>
+      <rect x="48" y="52" width="6" height="8" fill="#4FA3D1"/>
+      <rect x="62" y="52" width="6" height="8" fill="#4FA3D1"/>
+      <!-- Edificio derecha -->
+      <rect x="82" y="55" width="18" height="43" fill="#3B6D11" stroke="#0F1F33" stroke-width="2.5"/>
+      <rect x="86" y="62" width="3" height="5" fill="#FFFFFF"/>
+      <rect x="93" y="62" width="3" height="5" fill="#FFFFFF"/>
+      <rect x="86" y="72" width="3" height="5" fill="#FFFFFF"/>
+      <rect x="93" y="72" width="3" height="5" fill="#FFFFFF"/>
+      <rect x="86" y="82" width="3" height="5" fill="#FFFFFF"/>
+      <rect x="93" y="82" width="3" height="5" fill="#FFFFFF"/>
+      <!-- Marca de verificación -->
+      <circle cx="100" cy="22" r="14" fill="#3B6D11"/>
+      <polyline points="94,22 99,27 107,17" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <!-- Suelo -->
+      <line x1="6" y1="100" x2="114" y2="100" stroke="#0F1F33" stroke-width="2"/>
+    </svg>`,
+    tag: '¿Cuándo le sirve?',
+    ttl: 'Más casos de los que imagina',
+    txt: 'Cita médica que no llega, pensión que no avanza, factura cobrada de más, trámite estancado... <strong>Si una entidad pública le está fallando, usted tiene derecho a exigir respuesta.</strong>',
+    note: 'Totalmente <strong>gratis</strong>. No necesita saber de leyes — nosotros lo guiamos.'
+  },
+  {
+    ico: `<svg viewBox="0 0 120 120" width="120" height="120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <!-- Teléfono móvil -->
+      <rect x="30" y="14" width="60" height="92" rx="8" ry="8" fill="#FFFFFF" stroke="#0F1F33" stroke-width="2.5"/>
+      <rect x="35" y="22" width="50" height="76" rx="2" fill="#E8EDF1"/>
+      <!-- Pantalla con steps -->
+      <circle cx="44" cy="32" r="4" fill="#3B6D11"/>
+      <line x1="50" y1="32" x2="78" y2="32" stroke="#0F1F33" stroke-width="2"/>
+      <circle cx="44" cy="44" r="4" fill="#3B6D11"/>
+      <line x1="50" y1="44" x2="74" y2="44" stroke="#0F1F33" stroke-width="2"/>
+      <circle cx="44" cy="56" r="4" fill="#4FA3D1"/>
+      <line x1="50" y1="56" x2="76" y2="56" stroke="#0F1F33" stroke-width="2"/>
+      <circle cx="44" cy="68" r="4" fill="none" stroke="#0F1F33" stroke-width="2"/>
+      <line x1="50" y1="68" x2="72" y2="68" stroke="#0F1F33" stroke-width="2" opacity="0.5"/>
+      <circle cx="44" cy="80" r="4" fill="none" stroke="#0F1F33" stroke-width="2"/>
+      <line x1="50" y1="80" x2="70" y2="80" stroke="#0F1F33" stroke-width="2" opacity="0.5"/>
+      <!-- Botón inferior -->
+      <rect x="40" y="90" width="40" height="6" rx="3" fill="#094981"/>
+      <!-- Línea de progreso superior -->
+      <line x1="35" y1="22" x2="59" y2="22" stroke="#094981" stroke-width="3"/>
+      <!-- Indicador de voz al lado -->
+      <circle cx="100" cy="58" r="14" fill="#FFD27D" stroke="#0F1F33" stroke-width="2"/>
+      <rect x="98" y="51" width="4" height="9" rx="2" fill="#0F1F33"/>
+      <path d="M 94 60 Q 100 66, 106 60" stroke="#0F1F33" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <line x1="100" y1="66" x2="100" y2="70" stroke="#0F1F33" stroke-width="2" stroke-linecap="round"/>
+      <line x1="96" y1="70" x2="104" y2="70" stroke="#0F1F33" stroke-width="2" stroke-linecap="round"/>
+      <!-- Bocadillo / mensaje -->
+      <circle cx="14" cy="50" r="4" fill="#3B6D11" opacity="0.5"/>
+      <circle cx="20" cy="42" r="3" fill="#3B6D11" opacity="0.4"/>
+      <circle cx="24" cy="36" r="2" fill="#3B6D11" opacity="0.3"/>
+    </svg>`,
+    tag: 'Así funciona',
+    ttl: '5 pasos y listo',
+    txt: 'Le hacemos preguntas sencillas. Si prefiere, <strong>cuéntenos hablando</strong> y nosotros escribimos por usted. Armamos el documento oficial, lo enviamos y le avisamos cuando responda.',
+    note: 'Si la entidad se demora más de lo legal, le decimos qué hacer.'
+  },
 ];
 
 const ENTS = {
@@ -5602,7 +6260,8 @@ function obNext() {
   if (D.ob < 2) {
     D.ob++;
     const s = OBS[D.ob];
-    document.getElementById('ob-ico').textContent = s.ico;
+    // V17: ico ahora es SVG inline → usar innerHTML, no textContent
+    document.getElementById('ob-ico').innerHTML = s.ico;
     document.getElementById('ob-tag').textContent = s.tag;
     document.getElementById('ob-ttl').textContent = s.ttl;
     document.getElementById('ob-txt').innerHTML   = s.txt;
@@ -5639,9 +6298,9 @@ function vLogin() {
     dm.className = 'fld-msg ' + (dOk ? 'ok' : 'e');
     // R8: icono + texto en mensaje
     dm.innerHTML = dOk
-      ? '<span class="fld-msg-ico" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>Todo bien</span>'
-      : '<span class="fld-msg-ico" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span><span>Su documento debe tener al menos 6 dígitos. ¿Lo revisa?</span>';
-    di.innerHTML = dOk ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ok)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>' : '';
+      ? '<span class="fld-msg-ico" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><use href="#i-check"/></svg></span><span>Todo bien</span>'
+      : '<span class="fld-msg-ico" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-alert-triangle"/></svg></span><span>Su documento debe tener al menos 6 dígitos. ¿Lo revisa?</span>';
+    di.innerHTML = dOk ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ok)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-check"/></svg>' : '';
   }
 
   if (pv.length > 0) {
@@ -5775,8 +6434,117 @@ function gS(n) {
 
   document.getElementById('s-form').scrollTop = 0;
 
+  // V17: al entrar al paso 3, reiniciar al primer sub-paso
+  if (n === 3) fp3Goto(0);
+
   // R14: autosave al cambiar paso
   autoSave();
+}
+
+/* ════════════════════════════════════════════════════════════════
+   V17 — NAVEGACIÓN ENTRE SUB-PASOS DEL PASO 3
+   El paso 3 ("Cuéntenos qué pasó") tiene 5 sub-vistas: 4 preguntas
+   + 1 de evidencia opcional. Cada una se muestra individualmente.
+   ════════════════════════════════════════════════════════════════ */
+
+/* Mostrar un sub-paso específico (0..4) y ocultar los demás */
+function fp3Goto(idx) {
+  if (idx < 0) idx = 0;
+  if (idx > 5) idx = 5;
+  D.fp3SubStep = idx;
+
+  // Mostrar/ocultar sub-pasos
+  for (let i = 0; i <= 5; i++) {
+    const el = document.getElementById('fp3-sub-' + i);
+    if (!el) continue;
+    el.classList.toggle('active', i === idx);
+  }
+
+  // Actualizar segmentos de progreso:
+  //  - completados (anteriores al actual): done (verde)
+  //  - actual: active (azul)
+  //  - posteriores: vacío
+  for (let i = 0; i <= 5; i++) {
+    const seg = document.getElementById('fp3-seg-' + i);
+    if (!seg) continue;
+    seg.classList.remove('done', 'active');
+    if (i < idx) seg.classList.add('done');
+    else if (i === idx) seg.classList.add('active');
+  }
+
+  // Etiqueta accesible: "X de 6"
+  const lbl = document.getElementById('fp3-progress-lbl');
+  if (lbl) lbl.textContent = (idx + 1) + ' de 6';
+  const bar = document.querySelector('#fp3 .fp3-progress');
+  if (bar) bar.setAttribute('aria-valuenow', idx + 1);
+
+  // V18: Sub-paso 4 = vista previa del texto consolidado. Lo rellenamos al entrar.
+  if (idx === 4) {
+    try { _refreshConsolidatedFromWA(); } catch (e) {}
+  }
+
+  // Scroll al inicio del paso para que se vea la pregunta nueva
+  const sForm = document.getElementById('s-form');
+  if (sForm) sForm.scrollTop = sForm.scrollTop > 200 ? 200 : sForm.scrollTop;
+
+  // Foco al textarea del nuevo sub-paso (mejor UX en mobile y accesibilidad teclado)
+  // 0-3: preguntas; 4: preview consolidado; 5: evidencia (no foco para no abrir teclado)
+  const focusMap = ['wa-q1', 'wa-q2', 'wa-q3', 'wa-q4', 'wa-consolidated', null];
+  if (focusMap[idx]) {
+    const focusEl = document.getElementById(focusMap[idx]);
+    if (focusEl) {
+      // Retraso breve para esperar a que termine la animación de transición
+      setTimeout(() => focusEl.focus({ preventScroll: true }), 80);
+    }
+  }
+}
+
+/* Avanzar al siguiente sub-paso */
+function fp3Next() {
+  fp3Goto(D.fp3SubStep + 1);
+}
+
+/* Retroceder al sub-paso anterior */
+function fp3Prev() {
+  fp3Goto(D.fp3SubStep - 1);
+}
+
+/* Helper: arma el consolidado a partir de las 4 preguntas */
+function _refreshConsolidatedFromWA() {
+  const q1 = (document.getElementById('wa-q1')?.value || '').trim();
+  const q2 = (document.getElementById('wa-q2')?.value || '').trim();
+  const q3 = (document.getElementById('wa-q3')?.value || '').trim();
+  const q4 = (document.getElementById('wa-q4')?.value || '').trim();
+  const parts = [];
+  if (q1) parts.push(q1);
+  if (q2) parts.push('Esto sucede ' + q2.toLowerCase().replace(/^desde /, 'desde '));
+  if (q3) parts.push('Considero que se está afectando ' + q3.toLowerCase());
+  if (q4) parts.push('Para resolverlo, he intentado: ' + q4.toLowerCase());
+  const consolidated = parts.join('. ').replace(/\.+/g, '.').replace(/\.\s*$/, '.') ;
+  const consolEl = document.getElementById('wa-consolidated');
+  if (consolEl && !consolEl.value.trim()) {
+    consolEl.value = consolidated;
+  }
+  // También llenar el textarea oculto (que valida el "continuar al paso 4")
+  const hidden = document.getElementById('factsTA-hidden') || document.getElementById('factsTA');
+  if (hidden) {
+    hidden.value = consolEl?.value || consolidated;
+    D.facts = hidden.value;
+  }
+}
+
+/* Finalizar el paso 3 y avanzar al paso 4. skip=true cuando "Omitir, no tengo pruebas" */
+function fp3FinishStep(skip) {
+  // Asegurar que el consolidado refleje las respuestas
+  _refreshConsolidatedFromWA();
+
+  // Si el usuario omite, dejamos D.evidence sin tocar (probablemente vacío)
+  if (skip && typeof snack === 'function') {
+    snack('Continuamos sin pruebas. Lo puede hacer después si las consigue.', 'info');
+  }
+
+  // Avanzar al paso 4 global
+  gS(4);
 }
 
 /* ══════════════════════════════════════════════
@@ -6101,7 +6869,7 @@ const CASE_DATA = {
     radicado: 'DP-2026-08842',
     dateSent: '4 feb 2026',
     chipClass: 'chip-wrn',
-    chipIcon: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+    chipIcon: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-clock"/></svg>',
     chipText: 'En proceso',
     daysRemaining: 7,
     deadlineDate: '14 de mayo de 2026',
@@ -6125,7 +6893,7 @@ const CASE_DATA = {
     radicado: 'DP-2026-07321',
     dateSent: '12 mar 2026',
     chipClass: 'chip-ok',
-    chipIcon: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>',
+    chipIcon: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-check"/></svg>',
     chipText: 'Ya respondieron',
     daysRemaining: null,
     deadlineDate: '',
@@ -6152,7 +6920,7 @@ const CASE_DATA = {
     radicado: 'DP-2026-09014',
     dateSent: '28 ene 2026',
     chipClass: 'chip-inf',
-    chipIcon: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>',
+    chipIcon: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-send"/></svg>',
     chipText: 'Recién enviada',
     daysRemaining: 15,
     deadlineDate: '18 de febrero de 2026',
@@ -6419,7 +7187,7 @@ function pickEnt(name) {
   inp.className = 'inp v';
   const m = document.getElementById('ent-m');
   m.className = 'fld-msg ok';
-  m.innerHTML = '<span class="fld-msg-ico" aria-hidden="true">✅</span><span>Anotado: ' + name + '</span>';
+  m.innerHTML = '<span class="fld-msg-ico" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>Anotado: ' + name + '</span>';
   ckS2();
   snack('Listo, dirigiremos su petición a ' + name, 'ok', '🏢');
 }
@@ -6436,12 +7204,12 @@ function vEnt(inp) {
     inp.setAttribute('aria-invalid','false');
   } else if (v.length < 4) {
     m.className = 'fld-msg e';
-    m.innerHTML = '<span class="fld-msg-ico" aria-hidden="true">⚠️</span><span>Escriba el nombre completo de la entidad (al menos 4 letras)</span>';
+    m.innerHTML = '<span class="fld-msg-ico" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span><span>Escriba el nombre completo de la entidad (al menos 4 letras)</span>';
     inp.className = 'inp e';
     inp.setAttribute('aria-invalid','true');
   } else {
     m.className = 'fld-msg ok';
-    m.innerHTML = '<span class="fld-msg-ico" aria-hidden="true">✅</span><span>Listo</span>';
+    m.innerHTML = '<span class="fld-msg-ico" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>Listo</span>';
     inp.className = 'inp v';
     inp.setAttribute('aria-invalid','false');
   }
@@ -6470,13 +7238,13 @@ function uCC(ta) {
   } else if (len < min) {
     cls = 'e';
     // R8: error descriptivo con cómo solucionarlo
-    msg = `<span class="fld-msg-ico" aria-hidden="true">⚠️</span><span>Le faltan ${min-len} caracteres. Cuéntenos un poco más para fortalecer su caso.</span>`;
+    msg = `<span class="fld-msg-ico" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span><span>Le faltan ${min-len} caracteres. Cuéntenos un poco más para fortalecer su caso.</span>`;
   } else if (len < 200) {
     cls = 'w';
     msg = '<span class="fld-msg-ico" aria-hidden="true">ℹ️</span><span>Va bien. Si agrega más detalles, su caso queda más sólido.</span>';
   } else {
     cls = 'ok';
-    msg = '<span class="fld-msg-ico" aria-hidden="true">✅</span><span>Excelente, tiene un relato completo.</span>';
+    msg = '<span class="fld-msg-ico" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>Excelente, tiene un relato completo.</span>';
   }
 
   cn.className = 'char-n ' + cls;
@@ -6498,11 +7266,11 @@ function ckS4() {
   const m = document.getElementById('req-m');
   if (r.length > 0 && r.length < 20) {
     m.className = 'fld-msg e';
-    m.innerHTML = '<span class="fld-msg-ico" aria-hidden="true">⚠️</span><span>Cuéntenos un poco más qué pide. Sea concreto.</span>';
+    m.innerHTML = '<span class="fld-msg-ico" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span><span>Cuéntenos un poco más qué pide. Sea concreto.</span>';
     document.getElementById('reqTA').setAttribute('aria-invalid','true');
   } else if (r.length >= 20) {
     m.className = 'fld-msg ok';
-    m.innerHTML = '<span class="fld-msg-ico" aria-hidden="true">✅</span><span>Su petición es clara y concreta.</span>';
+    m.innerHTML = '<span class="fld-msg-ico" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>Su petición es clara y concreta.</span>';
     document.getElementById('reqTA').setAttribute('aria-invalid','false');
   } else {
     m.className = 'fld-msg'; m.innerHTML = '';
@@ -6520,11 +7288,11 @@ function ckS5() {
 
   if (e.length > 0 && !emailValid) {
     m.className = 'fld-msg e';
-    m.innerHTML = '<span class="fld-msg-ico" aria-hidden="true">⚠️</span><span>¿Le faltó algo? Revise que tenga el formato nombre@dominio.com</span>';
+    m.innerHTML = '<span class="fld-msg-ico" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span><span>¿Le faltó algo? Revise que tenga el formato nombre@dominio.com</span>';
     document.getElementById('petE').setAttribute('aria-invalid','true');
   } else if (emailValid) {
     m.className = 'fld-msg ok';
-    m.innerHTML = '<span class="fld-msg-ico" aria-hidden="true">✅</span><span>Listo</span>';
+    m.innerHTML = '<span class="fld-msg-ico" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>Listo</span>';
     document.getElementById('petE').setAttribute('aria-invalid','false');
   } else {
     m.className = 'fld-msg'; m.innerHTML = '';
@@ -6717,7 +7485,7 @@ function doSend() {
   b.disabled = true;
   b.setAttribute('aria-busy', 'true');
   setTimeout(() => {
-    b.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Enviar mi petición';
+    b.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-send"/></svg> Enviar mi petición';
     b.disabled = false;
     b.setAttribute('aria-busy', 'false');
 
@@ -6794,18 +7562,18 @@ function renderUserPetitions() {
     const chipHTML = pet.status === 'respondida'
       ? `<span class="chip chip-ok">
            <span class="chip-dot" aria-hidden="true"></span>
-           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-check"/></svg>
            Ya respondieron
          </span>`
       : pet.status === 'proceso'
       ? `<span class="chip chip-wrn">
            <span class="chip-dot" aria-hidden="true"></span>
-           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-clock"/></svg>
            En proceso
          </span>`
       : `<span class="chip chip-inf">
            <span class="chip-dot" aria-hidden="true"></span>
-           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-send"/></svg>
            Recién enviada
          </span>`;
 
@@ -7175,7 +7943,7 @@ function evRender(item, fileBlob) {
     const isPdf = item.type.includes('pdf');
     thumb.innerHTML = isPdf
       ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><text x="6" y="18" font-size="6" font-weight="800" fill="currentColor" stroke="none">PDF</text></svg>'
-      : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>';
+      : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-file-text"/></svg>';
   }
 
   const info = document.createElement('div');
@@ -7309,6 +8077,12 @@ function enBtn(id, ok) {
 document.addEventListener('DOMContentLoaded', () => {
   // V13: Inicializar tema (silencioso — sin snack en el primer paint)
   setTheme(window.__themePreference || 'system', { silent: true });
+
+  // V17: Inicializar ilustración del onboarding (OBS[0])
+  const obIcoEl = document.getElementById('ob-ico');
+  if (obIcoEl && OBS && OBS[0]) {
+    obIcoEl.innerHTML = OBS[0].ico;
+  }
 
   enBtn('s5n', true);
   ckS5();
@@ -7483,10 +8257,10 @@ function vReg() {
 }
 
 function svgOk() {
-  return '<span class="fld-msg-ico" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>';
+  return '<span class="fld-msg-ico" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><use href="#i-check"/></svg></span>';
 }
 function svgWarn() {
-  return '<span class="fld-msg-ico" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>';
+  return '<span class="fld-msg-ico" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-alert-triangle"/></svg></span>';
 }
 
 function doRegister() {
